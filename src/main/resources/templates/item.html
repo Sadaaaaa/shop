@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${product.name}">Название товара</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <!-- Подключаем общий хедер -->
+    <div th:replace="fragments/header :: header"></div>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <img th:if="${product.image}" 
+                             th:src="@{/products/image/{id}(id=${product.id})}" 
+                             alt="Product Image"
+                             class="img-fluid rounded">
+                        <div th:unless="${product.image}" class="text-center p-5 bg-light rounded">
+                            Нет изображения
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h1 class="card-title" th:text="${product.name}">Название товара</h1>
+                        <h2 class="text-primary mb-4" th:text="${product.price + ' ₽'}">0 ₽</h2>
+
+                        <div class="mb-4">
+                            <h3>Описание</h3>
+                            <p class="card-text" th:text="${product.description}">Описание товара</p>
+                        </div>
+
+                        <div class="product-actions">
+                            <form method="post" th:action="@{/cart/add}" th:id="'form-' + ${product.id}" class="cart-form">
+                                <input type="hidden" name="productId" th:value="${product.id}"/>
+                                
+                                <div class="d-flex align-items-center gap-3">
+                                    <button type="button" 
+                                            class="btn btn-outline-danger decrease-btn" 
+                                            th:attr="data-product-id=${product.id}"
+                                            th:style="${cart != null and cart.items != null and cart.items.?[product.id == __${product.id}__].size() > 0 ? '' : 'display: none;'}">
+                                        -
+                                    </button>
+                                    
+                                    <span class="quantity-display" th:id="'quantity-' + ${product.id}">
+                                        <span th:with="productInCart=${cart != null and cart.items != null ? cart.items.?[product.id == __${product.id}__] : null}"
+                                              th:text="${productInCart != null and !productInCart.isEmpty() ? productInCart[0].quantity : 0}"></span>
+                                    </span>
+                                    
+                                    <button type="submit" class="btn btn-primary">
+                                        В корзину
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:replace="fragments/header :: cart-script"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const productId = /*[[${product.id}]]*/ '';
+            const productInCart = /*[[${cart != null and cart.items != null ? cart.items.?[product.id == __${product.id}__] : null}]]*/ null;
+            const hasInCart = productInCart != null && productInCart.length > 0;
+            const quantity = hasInCart ? /*[[${cart != null and cart.items != null and cart.items.?[product.id == __${product.id}__].size() > 0 ? cart.items.?[product.id == __${product.id}__][0].quantity : 0}]]*/ 0 : 0;
+
+            // Обработка добавления в корзину
+            const cartForm = document.querySelector('.cart-form');
+            if (cartForm) {
+                cartForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    fetch('/cart/add?productId=' + productId, {
+                        method: 'POST'
+                    }).then(() => {
+                        // Обновляем счетчик корзины
+                        updateCartCount();
+                        // Перезагружаем страницу для обновления количества товаров
+                        window.location.reload();
+                    });
+                });
+            }
+
+            // Обработка уменьшения количества
+            const decreaseButton = document.querySelector('.decrease-btn');
+            if (decreaseButton) {
+                decreaseButton.style.display = quantity > 0 ? 'inline-block' : 'none';
+                
+                decreaseButton.addEventListener('click', function() {
+                    fetch('/cart/decrease?productId=' + productId, {
+                        method: 'POST'
+                    }).then(() => {
+                        // Обновляем счетчик корзины
+                        updateCartCount();
+                        // Перезагружаем страницу для обновления количества товаров
+                        window.location.reload();
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

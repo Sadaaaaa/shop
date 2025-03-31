@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Корзина</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .cart-item {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .cart-item img {
+            max-width: 100px;
+            height: auto;
+        }
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .quantity-btn {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            background: #f8f9fa;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .cart-summary {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .cart-total {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Подключаем общий хедер -->
+    <div th:replace="fragments/header :: header"></div>
+
+    <div class="container mt-4">
+        <h1>Корзина</h1>
+        
+        <div id="cart-items">
+            <div th:each="item : ${cart.items}" class="cart-item">
+                <div class="row">
+                    <div class="col-md-2">
+                        <img th:if="${item.product.image}" 
+                             th:src="@{/products/image/{id}(id=${item.product.id})}" 
+                             alt="Product Image"
+                             class="img-fluid">
+                        <div th:unless="${item.product.image}" class="text-center p-3 bg-light rounded">
+                            Нет изображения
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <h3 th:text="${item.product.name}">Название товара</h3>
+                        <p class="text-primary" th:text="${item.product.price + ' ₽'}">0 ₽</p>
+                        <p class="text-muted" th:text="${item.product.description}">Описание товара</p>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="quantity-controls">
+                            <button class="btn btn-outline-danger quantity-btn" 
+                                    th:attr="data-product-id=${item.product.id}"
+                                    onclick="updateQuantity(this.getAttribute('data-product-id'), -1)">
+                                -
+                            </button>
+                            <span th:text="${item.quantity}">0</span>
+                            <button class="btn btn-outline-primary quantity-btn" 
+                                    th:attr="data-product-id=${item.product.id}"
+                                    onclick="updateQuantity(this.getAttribute('data-product-id'), 1)">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <button class="btn btn-danger" 
+                                th:attr="data-product-id=${item.product.id}"
+                                onclick="removeFromCart(this.getAttribute('data-product-id'))">
+                            Удалить
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="cart-summary">
+            <div class="cart-total">
+                Итого: <span th:text="${#aggregates.sum(cart.items.![product.price * quantity])} + ' ₽'">0 ₽</span>
+            </div>
+            <a href="/order/checkout" class="btn btn-primary">Оформить заказ</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:replace="fragments/header :: cart-script"></script>
+    <script>
+        function updateQuantity(productId, delta) {
+            const quantityElement = document.querySelector(`[data-product-id="${productId}"]`).closest('.quantity-controls').querySelector('span');
+            const currentQuantity = parseInt(quantityElement.textContent);
+            const newQuantity = currentQuantity + delta;
+            
+            if (newQuantity <= 0) {
+                removeFromCart(productId);
+            } else {
+                fetch('/cart/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        productId: productId,
+                        quantity: newQuantity
+                    })
+                }).then(() => {
+                    quantityElement.textContent = newQuantity;
+                    updateTotalPrice();
+                });
+            }
+        }
+
+        function removeFromCart(productId) {
+            fetch(`/cart/remove?productId=${productId}`, {
+                method: 'POST'
+            }).then(() => {
+                const cartItem = document.querySelector(`[data-product-id="${productId}"]`).closest('.cart-item');
+                cartItem.remove();
+                updateTotalPrice();
+                updateCartCount();
+            });
+        }
+
+        function updateTotalPrice() {
+            const items = document.querySelectorAll('.cart-item');
+            let total = 0;
+            
+            items.forEach(item => {
+                const price = parseInt(item.querySelector('.text-primary').textContent);
+                const quantity = parseInt(item.querySelector('.quantity-controls span').textContent);
+                total += price * quantity;
+            });
+            
+            document.querySelector('.cart-total span').textContent = total + ' ₽';
+        }
+    </script>
+</body>
+</html> 

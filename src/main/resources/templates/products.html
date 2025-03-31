@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Products</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            padding-top: 80px;
+        }
+        .navbar {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+        .nav-link {
+            color: #666;
+            margin: 0 10px;
+            transition: color 0.3s;
+        }
+        .nav-link:hover {
+            color: #333;
+        }
+        .cart-button {
+            position: relative;
+            padding: 8px 15px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: #333;
+        }
+        .cart-button:hover {
+            background-color: #f8f9fa;
+            border-color: #ccc;
+        }
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: #dc3545;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+            min-width: 18px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Подключаем общий хедер -->
+    <div th:replace="fragments/header :: header"></div>
+
+    <div class="container main-content">
+        <h1>Товары</h1>
+
+        <form method="get" action="/" class="filter-form mb-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="search" placeholder="Поиск..." th:value="${param.search}"/>
+                </div>
+                <div class="col-md-4">
+                    <select class="form-select" name="sort">
+                        <option value="" th:selected="${param.sort == null}">По умолчанию</option>
+                        <option value="name_asc" th:selected="${param.sort != null and param.sort[0] == 'name_asc'}">Название (А-Я)</option>
+                        <option value="name_desc" th:selected="${param.sort != null and param.sort[0] == 'name_desc'}">Название (Я-А)</option>
+                        <option value="price_asc" th:selected="${param.sort != null and param.sort[0] == 'price_asc'}">Цена (по возрастанию)</option>
+                        <option value="price_desc" th:selected="${param.sort != null and param.sort[0] == 'price_desc'}">Цена (по убыванию)</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary">Фильтровать</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            <div class="col" th:each="product : ${products}">
+                <div class="card h-100">
+                    <img th:if="${product.image}" th:src="@{/products/image/{id}(id=${product.id})}" class="card-img-top" alt="Product Image">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${product.name}"></h5>
+                        <p class="card-text" th:text="${product.description}"></p>
+                        <p class="card-text"><strong>Цена: </strong><span th:text="${product.price}"></span> ₽</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <form method="post" th:action="@{/cart/add}" th:id="'form-' + ${product.id}" class="d-flex gap-2 cart-form">
+                                <input type="hidden" name="productId" th:value="${product.id}"/>
+                                <button type="submit" class="btn btn-primary">
+                                    В корзину
+                                    <span th:if="${cart.items.?[product.id == __${product.id}__].size() > 0}"
+                                          th:text="'(' + ${cart.items.?[product.id == __${product.id}__][0].quantity} + ')'"></span>
+                                </button>
+                                <button type="button" class="btn btn-outline-danger decrease-btn" th:attr="data-product-id=${product.id}">
+                                    -
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pagination mt-4">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                        <a class="page-link" th:href="@{/(page=${currentPage - 1}, size=${param.size}, sort=${param.sort}, search=${param.search})}">Предыдущая</a>
+                    </li>
+                    <li class="page-item">
+                        <span class="page-link" th:text="|Страница ${currentPage + 1} из ${totalPages}|"></span>
+                    </li>
+                    <li class="page-item" th:classappend="${currentPage + 1 >= totalPages} ? 'disabled'">
+                        <a class="page-link" th:href="@{/(page=${currentPage + 1}, size=${param.size}, sort=${param.sort}, search=${param.search})}">Следующая</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <form method="get" action="/" class="page-size-form text-center">
+                <input type="hidden" name="page" th:value="${currentPage}"/>
+                <input type="hidden" name="sort" th:value="${param.sort != null ? param.sort[0] : ''}"/>
+                <input type="hidden" name="search" th:value="${param.search != null ? param.search[0] : ''}"/>
+
+                <label for="size-select">Товаров на странице:</label>
+                <select id="size-select" name="size" class="form-select d-inline-block w-auto ms-2" onchange="this.form.submit()">
+                    <option value="10" th:selected="${param.size != null and param.size[0] == '10'}">10</option>
+                    <option value="20" th:selected="${param.size != null and param.size[0] == '20'}">20</option>
+                    <option value="50" th:selected="${param.size != null and param.size[0] == '50'}">50</option>
+                    <option value="100" th:selected="${param.size != null and param.size[0] == '100'}">100</option>
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:replace="fragments/header :: cart-script"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Обработка добавления в корзину
+            document.querySelectorAll('.cart-form').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const productId = this.querySelector('input[name="productId"]').value;
+                    
+                    fetch('/cart/add?productId=' + productId, {
+                        method: 'POST'
+                    }).then(() => {
+                        // Обновляем счетчик корзины
+                        updateCartCount();
+                        // Перезагружаем страницу для обновления количества товаров
+                        window.location.reload();
+                    });
+                });
+            });
+
+            // Обработка уменьшения количества
+            document.querySelectorAll('.decrease-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const productId = this.getAttribute('data-product-id');
+                    
+                    fetch('/cart/decrease?productId=' + productId, {
+                        method: 'POST'
+                    }).then(() => {
+                        // Обновляем счетчик корзины
+                        updateCartCount();
+                        // Перезагружаем страницу для обновления количества товаров
+                        window.location.reload();
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
