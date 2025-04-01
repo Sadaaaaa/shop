@@ -46,9 +46,7 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public Integer getCartCounter(Long userId) {
-        Integer quantity = cartRepository.findCartByUserId(userId).orElse(Cart.getCart()).getItems().size();
-        log.info("Cart counter for user {} is {}", userId, quantity);
-        return quantity;
+        return cartRepository.findCartByUserId(userId).orElse(Cart.getCart()).getItems().size();
     }
 
     @Override
@@ -72,15 +70,22 @@ public class CartServiceImpl implements CartService {
     @Transactional
     @Override
     public Cart addToCart(Long userId, Long productId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+        if (productId == null) {
+            throw new IllegalArgumentException("Product ID cannot be null");
+        }
+        
         Cart cart = cartRepository.findCartByUserId(userId)
                 .orElseGet(() -> Cart.builder().userId(userId).items(new ArrayList<>()).build());
 
         CartItem cartItem = cart.getItems().stream()
-                .filter(item -> item.getProduct().getId().equals(productId))
+                .filter(item -> productId.equals(item.getProduct().getId()))
                 .findFirst()
                 .orElseGet(() -> {
                     Product product = productRepository.findById(productId)
-                            .orElseThrow(() -> new RuntimeException("Product not found!"));
+                            .orElseThrow(() -> new IllegalArgumentException("Product not found with ID: " + productId));
 
                     CartItem newCartItem = CartItem.builder().product(product).quantity(0).build();
                     cart.getItems().add(newCartItem);
@@ -96,6 +101,13 @@ public class CartServiceImpl implements CartService {
     @Transactional
     @Override
     public Cart decreaseItems(Long userId, Long productId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+        if (productId == null) {
+            throw new IllegalArgumentException("Product ID cannot be null");
+        }
+        
         Cart cart = cartRepository.findCartByUserId(userId)
                 .orElse(null);
 
@@ -104,7 +116,7 @@ public class CartServiceImpl implements CartService {
         }
 
         CartItem cartItem = cart.getItems().stream()
-                .filter(item -> item.getProduct().getId().equals(productId))
+                .filter(item -> productId.equals(item.getProduct().getId()))
                 .findFirst()
                 .orElse(null);
 
@@ -125,6 +137,10 @@ public class CartServiceImpl implements CartService {
     @Transactional
     @Override
     public void removeFromCart(Long userId, Long productId) {
+        if (userId == null || productId == null) {
+            return;
+        }
+        
         Cart cart = cartRepository.findCartByUserId(userId)
                 .orElse(null);
 
@@ -132,13 +148,23 @@ public class CartServiceImpl implements CartService {
             return;
         }
 
-        cart.getItems().removeIf(item -> item.getProduct().getId().equals(productId));
+        cart.getItems().removeIf(item -> productId.equals(item.getProduct().getId()));
         cartRepository.save(cart);
     }
 
     @Transactional
     @Override
     public Cart updateQuantity(Long userId, Long productId, Integer quantity) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+        if (productId == null) {
+            throw new IllegalArgumentException("Product ID cannot be null");
+        }
+        if (quantity == null) {
+            throw new IllegalArgumentException("Quantity cannot be null");
+        }
+        
         if (quantity <= 0) {
             removeFromCart(userId, productId);
             return getCart(userId);
@@ -148,11 +174,11 @@ public class CartServiceImpl implements CartService {
                 .orElseGet(() -> Cart.builder().userId(userId).items(new ArrayList<>()).build());
 
         CartItem cartItem = cart.getItems().stream()
-                .filter(item -> item.getProduct().getId().equals(productId))
+                .filter(item -> productId.equals(item.getProduct().getId()))
                 .findFirst()
                 .orElseGet(() -> {
                     Product product = productRepository.findById(productId)
-                            .orElseThrow(() -> new RuntimeException("Product not found!"));
+                            .orElseThrow(() -> new IllegalArgumentException("Product not found with ID: " + productId));
 
                     CartItem newCartItem = CartItem.builder().product(product).quantity(0).build();
                     cart.getItems().add(newCartItem);

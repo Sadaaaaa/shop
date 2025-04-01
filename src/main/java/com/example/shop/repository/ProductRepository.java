@@ -30,14 +30,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @Param("maxPrice") BigDecimal maxPrice,
             Pageable pageable);
 
-
-    @Modifying
-    @Query(value = "INSERT INTO products (description, image, name, price) VALUES (:description, :image, :name, :price)", nativeQuery = true)
-    void saveProduct(@Param("description") String description,
-                     @Param("image") byte[] image,
-                     @Param("name") String name,
-                     @Param("price") Double price);
-
     @Query("SELECT p FROM Product p")
     Page<Product> findAllProducts(Pageable pageable);
 }

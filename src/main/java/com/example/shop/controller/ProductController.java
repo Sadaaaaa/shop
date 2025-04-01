@@ -4,7 +4,6 @@ import com.example.shop.model.Cart;
 import com.example.shop.model.Product;
 import com.example.shop.service.CartService;
 import com.example.shop.service.ProductService;
-import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @Slf4j
 @Controller
@@ -54,26 +52,19 @@ public class ProductController {
             products = productService.findAllProducts(pageable);
         }
 
-        // Получаем текущее количество товаров в корзине
-//        Map<Long, Integer> cartItems = cartService.getCartItemsQuantity(MOCK_USER);
         Cart cart = cartService.getCart(MOCK_USER);
 
         model.addAttribute("products", products.getContent());
         model.addAttribute("totalPages", products.getTotalPages());
         model.addAttribute("currentPage", page);
-//        model.addAttribute("cartItems", cartItems); // Добавляем счетчик товаров в модель
         model.addAttribute("cart", cart);
 
-
-
-//        model.addAttribute("param", Map.of("search", search == null ? "" : search, "sort", sort  == null ? "" : sort, "size", size));
         Map<String, Object> params = new HashMap<>();
         params.put("search", search == null ? "" : search);
         params.put("sort", sort == null ? "" : sort);
-        params.put("size", size); // int
+        params.put("size", size);
 
         model.addAttribute("param", params);
-        log.info("Current size: {}", params);
         return "products";
     }
 
@@ -90,17 +81,14 @@ public class ProductController {
 
     @GetMapping("/products/{id}")
     public String viewProduct(@PathVariable Long id, Model model) {
-        // Получаем продукт по id
         Product productOpt = productService.findProductById(id);
 
-        // Получаем корзину из сессии
         Cart cart = cartService.getCart(MOCK_USER);
 
-        // Добавляем продукт и корзину в модель
         model.addAttribute("product", productOpt);
         model.addAttribute("cart", cart);
 
-        return "item"; // Возвращаем шаблон item.html
+        return "item";
     }
 
     @GetMapping("/products/image/{id}")

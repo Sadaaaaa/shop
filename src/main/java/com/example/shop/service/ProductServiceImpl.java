@@ -60,8 +60,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     @Override
     public Product saveProduct(Product product) {
-        productRepository.saveProduct(product.getDescription(), product.getImage(), product.getName(), product.getPrice());
-        return null;
+        return productRepository.save(product);
     }
 
     @Transactional

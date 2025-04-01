@@ -1,227 +1,222 @@
-/* Base Styles */
+/* 
+ * Унифицированные стили для всего проекта
+ * ========================================
+ */
+
+/* 
+ * 1. Базовые стили 
+ */
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Arial', sans-serif;
     background-color: #f8f9fa;
     margin: 0;
     padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     min-height: 100vh;
+    padding-top: 80px; /* Отступ для фиксированной навигации */
 }
 
 .container {
-    width: 90%;
     max-width: 1200px;
-    background: white;
+    margin: 0 auto;
     padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    text-align: center;
 }
 
-/* Header and Navigation */
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+.main-content {
+    margin-top: 20px;
 }
 
-.nav-buttons {
-    display: flex;
-    gap: 15px;
-    align-items: center;
-}
-
-.back-button {
-    text-decoration: none;
-    padding: 8px 15px;
-    background-color: #f0f0f0;
+h1, h2, h3, h4, h5, h6 {
     color: #333;
-    border-radius: 5px;
-    font-size: 14px;
-    transition: background-color 0.2s;
+    margin-bottom: 1rem;
 }
 
-.back-button:hover {
-    background-color: #e0e0e0;
+/* 
+ * 2. Навигация и хедер 
+ */
+.navbar {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
 }
 
-.cart-button {
-    display: inline-flex;
-    align-items: center;
-    text-decoration: none;
-    padding: 8px 15px;
-    background-color: #007bff;
-    color: white;
-    border-radius: 5px;
-    font-size: 14px;
-    transition: background-color 0.2s;
-}
-
-.cart-button:hover {
-    background-color: #0056b3;
-}
-
-#cart-size {
-    display: inline-block;
-    background-color: white;
-    color: #007bff;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    text-align: center;
-    line-height: 20px;
-    margin-left: 8px;
+.navbar-brand {
+    font-size: 1.5rem;
     font-weight: bold;
+    color: #333;
 }
 
-/* Filter Form */
-.filter-form {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 20px;
+.nav-link {
+    color: #666;
+    margin: 0 10px;
+    transition: color 0.3s;
 }
 
-.filter-form input,
-.filter-form select,
-.filter-form button {
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 16px;
+.nav-link:hover {
+    color: #333;
 }
 
-.filter-form button {
-    background-color: #007bff;
-    color: white;
-    cursor: pointer;
-    border: none;
-}
-
-.filter-form button:hover {
-    background-color: #0056b3;
-}
-
-/* Product Grid for List Page */
-.product-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    justify-content: center;
-}
-
+/* 
+ * 3. Карточки и списки товаров 
+ */
 .product-card {
-    background: white;
-    padding: 15px;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease;
+    height: 100%;
     border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    transition: transform 0.2s ease-in-out;
+    overflow: hidden;
+    cursor: pointer;
     position: relative;
 }
 
 .product-card:hover {
-    transform: scale(1.05);
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-.product-card img {
-    width: 100%;
-    height: 150px;
+.card-img-top {
+    height: 200px;
     object-fit: cover;
-    border-radius: 5px;
 }
 
-.product-card-link {
+.card-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.card-text {
+    color: #666;
+    margin-bottom: 1rem;
+}
+
+.card-link {
     text-decoration: none;
     color: inherit;
-    display: block;
-    margin-bottom: 10px;
 }
 
-.price, .product-price {
-    font-weight: bold;
-    color: #28a745;
-}
-
-/* Buttons */
-.add-button, .product-card button {
-    background-color: #28a745;
-    color: white;
-    border: none;
-    padding: 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.add-button:hover, .product-card button:hover {
-    background-color: #218838;
-}
-
-.decrease-button {
-    background-color: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    padding: 10px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.decrease-button:hover {
-    background-color: #bb2d3b;
-}
-
-/* Pagination */
-.pagination {
-    margin-top: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.pagination a {
+.card-link:hover {
     text-decoration: none;
-    padding: 10px 15px;
+}
+
+.card-footer {
+    background-color: transparent;
+    padding: 1rem;
+    border-top: none;
+    position: relative;
+    z-index: 2;
+}
+
+.card-footer form, 
+.card-footer button {
+    position: relative;
+    z-index: 3;
+}
+
+/* 
+ * 4. Кнопки и элементы управления 
+ */
+.btn {
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0069d9;
+    border-color: #0062cc;
+}
+
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+/* Кнопка корзины */
+.cart-button {
+    position: relative;
+    padding: 8px 15px;
+    background-color: #fff;
     border: 1px solid #ddd;
     border-radius: 5px;
-    background: #007bff;
-    color: white;
-    font-size: 14px;
-}
-
-.pagination a:hover {
-    background: #0056b3;
-}
-
-.pagination span {
-    font-size: 14px;
-}
-
-.page-size-form {
-    display: flex;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    color: #333;
+    display: inline-flex;
     align-items: center;
-    gap: 5px;
 }
 
-/* Product Detail Page */
-.product-detail-container {
-    max-width: 1000px;
-    margin: 40px auto;
+.cart-button:hover {
+    background-color: #f8f9fa;
+    border-color: #ccc;
 }
 
+.cart-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+    min-width: 18px;
+    text-align: center;
+}
+
+/* 
+ * 5. Формы и фильтры 
+ */
+.form-control, .form-select {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.filter-form {
+    margin-bottom: 1.5rem;
+}
+
+/* 
+ * 6. Детали товара 
+ */
 .product-detail {
     display: flex;
     flex-direction: row;
     gap: 30px;
     margin-top: 30px;
-    text-align: left;
 }
 
 .product-image-container {
@@ -287,16 +282,110 @@ body {
     margin-top: 20px;
 }
 
-.product-form {
+/* 
+ * 7. Корзина и заказы 
+ */
+.cart-item {
     display: flex;
-    flex-direction: column;
-    gap: 15px;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+}
+
+.cart-item-image {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-right: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.cart-item img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Новая верстка для заказов */
+.order-item {
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.order-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.order-image-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.order-item-image {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: 1px solid #eee;
+}
+
+.order-item-info {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    border-left: 3px solid #007bff;
+}
+
+.order-item .card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.order-item .card-subtitle {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.cart-item-details {
+    flex: 1;
+}
+
+.cart-item-title {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.cart-item-price {
+    color: #28a745;
+    font-weight: bold;
 }
 
 .quantity-controls {
     display: flex;
     align-items: center;
     gap: 10px;
+}
+
+.quantity-btn {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    background: #f8f9fa;
+    border-radius: 3px;
+    cursor: pointer;
 }
 
 .quantity-display {
@@ -311,12 +400,142 @@ body {
     border-radius: 5px;
 }
 
-/* Responsive Styles */
-@media (max-width: 768px) {
-    .product-grid {
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    }
+.cart-summary, .order-summary {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
 
+.cart-total, .order-total {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.order-card {
+    transition: transform 0.2s;
+}
+
+.order-card:hover {
+    transform: translateY(-5px);
+}
+
+/* 
+ * 8. Админ-панель 
+ */
+.product-image {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+    display: block;
+    margin: 0 auto;
+}
+
+.product-form {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.table img {
+    max-width: 100%;
+    height: auto;
+}
+
+.table-responsive {
+    margin-top: 20px;
+}
+
+.table th {
+    white-space: nowrap;
+}
+
+.table td:nth-child(2) {
+    width: 80px;
+    text-align: center;
+}
+
+/* 
+ * 9. Пагинация 
+ */
+.pagination-container {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.pagination {
+    margin: 0;
+}
+
+.page-link {
+    color: #007bff;
+    border: 1px solid #dee2e6;
+    transition: all 0.2s;
+}
+
+.page-link:hover {
+    color: #0056b3;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.page-item.active .page-link {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.page-item.disabled .page-link {
+    color: #6c757d;
+    background-color: #fff;
+    border-color: #dee2e6;
+}
+
+.page-size-form {
+    margin: 0;
+}
+
+.page-size-form label {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+
+.page-size-form .form-select {
+    flex-shrink: 0;
+    font-size: 0.95rem;
+    height: 38px;
+    padding: 0.375rem 0.75rem;
+}
+
+@media (max-width: 767.98px) {
+    .pagination-container .row > div {
+        margin-bottom: 1rem;
+    }
+    
+    .pagination-container .row > div:last-child {
+        margin-bottom: 0;
+    }
+    
+    .pagination {
+        justify-content: center !important;
+    }
+}
+
+/* 
+ * 10. Адаптивность 
+ */
+@media (max-width: 768px) {
     .product-detail {
         flex-direction: column;
     }
@@ -336,17 +555,8 @@ body {
         width: 100%;
         justify-content: space-between;
     }
-
-    .filter-form {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .quantity-controls {
-        flex-wrap: wrap;
-    }
-
-    .add-button {
-        width: 100%;
+    
+    .table-responsive {
+        overflow-x: auto;
     }
 }

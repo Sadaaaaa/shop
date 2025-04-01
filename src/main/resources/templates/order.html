@@ -2,35 +2,13 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Детали заказа</title>
+    <title>Заказ</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <style>
-        .order-item {
-            border: 1px solid #ddd;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-        }
-        .order-item img {
-            max-width: 100px;
-            height: auto;
-        }
-        .order-summary {
-            margin-top: 20px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 5px;
-        }
-        .order-total {
-            font-size: 1.2em;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
     <!-- Подключаем общий хедер -->
-    <div th:replace="fragments/header :: header"></div>
+    <div th:replace="~{fragments/header :: header}"></div>
 
     <div class="container mt-4">
         <h1>Заказ #<span th:text="${order.id}">1</span></h1>
@@ -45,27 +23,40 @@
         
         <h2 class="mb-4">Товары в заказе</h2>
         <div class="order-items">
-            <div th:each="item : ${order.orderItems}" class="order-item">
-                <div class="row">
-                    <div class="col-md-2">
-                        <img th:if="${item.product.image}" 
-                             th:src="@{/products/image/{id}(id=${item.product.id})}" 
-                             alt="Product Image"
-                             class="img-fluid">
-                        <div th:unless="${item.product.image}" class="text-center p-3 bg-light rounded">
-                            Нет изображения
+            <div th:each="item : ${order.orderItems}" class="order-item card mb-3">
+                <div class="row g-0">
+                    <div class="col-md-2 d-flex align-items-center justify-content-center p-3">
+                        <div class="order-image-container">
+                            <img th:if="${item.product.image}" 
+                                 th:src="@{/products/image/{id}(id=${item.product.id})}" 
+                                 alt="Product Image"
+                                 class="order-item-image rounded">
+                            <div th:unless="${item.product.image}" class="text-center p-3 bg-light rounded">
+                                Нет изображения
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="col-md-4">
-                        <h3 th:text="${item.product.name}">Название товара</h3>
-                        <p class="text-primary" th:text="${item.product.price + ' ₽'}">0 ₽</p>
-                        <p class="text-muted" th:text="${item.product.description}">Описание товара</p>
+                    <div class="col-md-7">
+                        <div class="card-body py-3">
+                            <h4 class="card-title" th:text="${item.product.name}">Название товара</h4>
+                            <h5 class="card-subtitle mb-2 text-primary" th:text="${item.product.price + ' ₽'}">0 ₽</h5>
+                            <p class="card-text text-muted" th:text="${item.product.description}">Описание товара</p>
+                        </div>
                     </div>
                     
-                    <div class="col-md-3">
-                        <p>Количество: <span th:text="${item.quantity}">1</span></p>
-                        <p>Сумма: <span th:text="${item.price * item.quantity + ' ₽'}">0 ₽</span></p>
+                    <div class="col-md-3 d-flex align-items-center">
+                        <div class="order-item-info w-100 m-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Количество:</span>
+                                <strong th:text="${item.quantity}">1</strong>
+                            </div>
+                            <hr class="my-2">
+                            <div class="d-flex justify-content-between">
+                                <span>Сумма:</span>
+                                <strong th:text="${item.price * item.quantity + ' ₽'}">0 ₽</strong>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -73,6 +64,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script th:replace="fragments/header :: cart-script"></script>
+    <script th:replace="~{fragments/header :: cart-script}"></script>
 </body>
 </html> 

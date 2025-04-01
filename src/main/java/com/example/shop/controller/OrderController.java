@@ -26,7 +26,7 @@ public class OrderController {
     @Autowired
     private CartService cartService;
 
-    private static final Long MOCK_USER_ID = 1L; // Временное решение для демонстрации
+    private static final Long MOCK_USER_ID = 1L;
 
     @GetMapping
     public String listOrders(Model model) {
@@ -44,8 +44,7 @@ public class OrderController {
     public String createOrder() {
         Cart cart = cartService.getCart(MOCK_USER_ID);
         List<OrderItem> orderItems = new ArrayList<>();
-        
-        // Создаем копию списка товаров корзины
+
         List<CartItem> cartItems = new ArrayList<>(cart.getItems());
         
         cartItems.forEach(cartItem -> {
@@ -57,7 +56,7 @@ public class OrderController {
         });
 
         Order order = orderService.createOrder(orderItems);
-        // Очищаем корзину после создания заказа
+
         cartItems.forEach(item -> 
             cartService.removeFromCart(MOCK_USER_ID, item.getProduct().getId())
         );
