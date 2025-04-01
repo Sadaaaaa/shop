@@ -6,27 +6,28 @@ import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
 public interface ProductService {
 
-    Page<Product> findAllProducts(Pageable pageable);
-    Page<Product> findProductsByNameOrDescription(String query, Pageable pageable);
+    public Page<Product> findAllProducts(Pageable pageable);
 
+    public Page<Product> findProductsByNameOrDescription(String query, Pageable pageable);
 
-    Page<Product> findProductsByName(String name, Pageable pageable);
+    public Page<Product> findProductsByName(String name, Pageable pageable);
 
-    Page<Product> findProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
+    public Page<Product> findProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
 
-    Page<Product> findProductsWithFilters(String name, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
+    public Page<Product> findProductsWithFilters(String name, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
 
+    public Product findProductById(Long id);
 
+    public void deleteProductById(Long id);
 
-    Product findProductById(Long id);
+    public Product saveProduct(Product product);
 
-    void deleteProductById(Long id);
+    public List<Product> saveAllProducts(List<Product> products);
 
-    Product saveProduct(Product product);
+    public List<Product> getAllProducts();
 
-    List<Product> saveAllProducts(List<Product> products);
+    public void deleteProduct(Long id);
 }

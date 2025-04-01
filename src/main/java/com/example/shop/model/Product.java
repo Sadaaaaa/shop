@@ -5,7 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,7 +25,6 @@ public class Product {
     private String description;
     private double price;
 
-    @Lob
-    @Column(name = "image", columnDefinition = "BYTEA")
+    @Column(columnDefinition = "bytea")
     private byte[] image;
 }

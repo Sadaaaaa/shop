@@ -4,6 +4,7 @@ import com.example.shop.model.Product;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -28,4 +29,15 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @Param("minPrice") BigDecimal minPrice,
             @Param("maxPrice") BigDecimal maxPrice,
             Pageable pageable);
+
+
+    @Modifying
+    @Query(value = "INSERT INTO products (description, image, name, price) VALUES (:description, :image, :name, :price)", nativeQuery = true)
+    void saveProduct(@Param("description") String description,
+                     @Param("image") byte[] image,
+                     @Param("name") String name,
+                     @Param("price") Double price);
+
+    @Query("SELECT p FROM Product p")
+    Page<Product> findAllProducts(Pageable pageable);
 }

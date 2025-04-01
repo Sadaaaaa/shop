@@ -97,7 +97,9 @@
             <div class="cart-total">
                 Итого: <span th:text="${#aggregates.sum(cart.items.![product.price * quantity])} + ' ₽'">0 ₽</span>
             </div>
-            <a href="/order/checkout" class="btn btn-primary">Оформить заказ</a>
+            <form th:action="@{/orders/create}" method="post">
+                <button type="submit" class="btn btn-primary">Оформить заказ</button>
+            </form>
         </div>
     </div>
 

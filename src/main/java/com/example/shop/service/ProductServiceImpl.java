@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -25,7 +24,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     @Override
     public Page<Product> findAllProducts(Pageable pageable) {
-        return productRepository.findAll(pageable);
+        return productRepository.findAllProducts(pageable);
     }
 
     @Transactional(readOnly = true)
@@ -61,7 +60,8 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     @Override
     public Product saveProduct(Product product) {
-        return productRepository.save(product);
+        productRepository.saveProduct(product.getDescription(), product.getImage(), product.getName(), product.getPrice());
+        return null;
     }
 
     @Transactional
@@ -74,6 +74,16 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<Product> saveAllProducts(List<Product> products) {
         return productRepository.saveAll(products);
+    }
+
+    @Override
+    public List<Product> getAllProducts() {
+        return productRepository.findAll();
+    }
+
+    @Override
+    public void deleteProduct(Long id) {
+        productRepository.deleteById(id);
     }
 
 }

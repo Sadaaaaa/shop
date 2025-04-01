@@ -11,6 +11,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -99,5 +101,16 @@ public class ProductController {
         model.addAttribute("cart", cart);
 
         return "item"; // Возвращаем шаблон item.html
+    }
+
+    @GetMapping("/products/image/{id}")
+    public ResponseEntity<byte[]> getProductImage(@PathVariable Long id) {
+        Product product = productService.findProductById(id);
+        if (product.getImage() != null) {
+            return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_JPEG)
+                    .body(product.getImage());
+        }
+        return ResponseEntity.notFound().build();
     }
 }
