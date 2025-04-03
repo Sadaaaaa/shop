@@ -57,33 +57,25 @@ class OrderServiceTest extends BaseTest {
 
     @Test
     void createOrder_ValidOrderItems_ShouldCreateOrder() {
-        // Act
         Order result = orderService.createOrder(TEST_USER_ID, testOrderItems);
 
-        // Assert
         assertNotNull(result);
         verify(orderRepository).save(any(Order.class));
     }
 
     @Test
     void getOrderById_ExistingOrder_ShouldReturnOrder() {
-        // Act
         Order result = orderService.getOrderById(testOrder.getId());
 
-        // Assert
         assertNotNull(result);
         assertEquals(testOrder.getId(), result.getId());
     }
 
     @Test
     void getAllOrders_ShouldReturnOrdersList() {
-        // Arrange
         when(orderRepository.findAll()).thenReturn(Arrays.asList(testOrder));
-        
-        // Act
         List<Order> results = orderService.getAllOrders();
 
-        // Assert
         assertFalse(results.isEmpty());
         assertEquals(1, results.size());
         assertEquals(testOrder.getId(), results.get(0).getId());
@@ -91,13 +83,10 @@ class OrderServiceTest extends BaseTest {
 
     @Test
     void calculateOrderTotal_ValidOrderItems_ShouldReturnCorrectTotal() {
-        // Act
         Order result = orderService.createOrder(TEST_USER_ID, testOrderItems);
-
-        // Assert
         assertNotNull(result.getTotalAmount());
-        // Проверяем, что сумма заказа равна цене товара, умноженной на количество
         double expectedTotal = testProduct.getPrice() * testOrderItems.get(0).getQuantity();
+
         assertEquals(expectedTotal, result.getTotalAmount(), 0.01);
     }
 } 

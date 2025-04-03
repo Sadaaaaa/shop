@@ -51,7 +51,6 @@ class AdminControllerTest extends BaseTest {
 
     @Test
     void addProduct_ValidProduct_ShouldRedirectToAdmin() throws Exception {
-        // Arrange
         MockMultipartFile imageFile = new MockMultipartFile(
             "image",
             "test.jpg",
@@ -59,7 +58,6 @@ class AdminControllerTest extends BaseTest {
             "test image content".getBytes()
         );
 
-        // Act & Assert
         mockMvc.perform(multipart("/admin/products/add")
                 .file(imageFile)
                 .param("name", "Test Product")
