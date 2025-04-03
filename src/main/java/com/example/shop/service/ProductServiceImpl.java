@@ -8,7 +8,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -45,34 +44,10 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(query, query, pageable);
     }
 
-    @Transactional(readOnly = true)
-    @Override
-    public Page<Product> findProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
-        return productRepository.findByPriceBetween(minPrice, maxPrice, pageable);
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public Page<Product> findProductsWithFilters(String name, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
-        return productRepository.findWithFilters(name, minPrice, maxPrice, pageable);
-    }
-
     @Transactional
     @Override
     public Product saveProduct(Product product) {
         return productRepository.save(product);
-    }
-
-    @Transactional
-    @Override
-    public void deleteProductById(Long id) {
-        productRepository.deleteById(id);
-    }
-
-    @Transactional
-    @Override
-    public List<Product> saveAllProducts(List<Product> products) {
-        return productRepository.saveAll(products);
     }
 
     @Override
