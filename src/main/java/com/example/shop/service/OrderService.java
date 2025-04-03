@@ -11,5 +11,5 @@ public interface OrderService {
 
     Order getOrderById(Long id);
 
-    Order createOrder(List<OrderItem> items);
+    Order createOrder(Long userId, List<OrderItem> items);
 }

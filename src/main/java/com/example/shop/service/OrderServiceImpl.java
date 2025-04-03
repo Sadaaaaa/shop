@@ -35,8 +35,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Transactional
     @Override
-    public Order createOrder(List<OrderItem> items) {
+    public Order createOrder(Long userId, List<OrderItem> items) {
         Order order = new Order();
+        order.setUserId(userId);
         order.setOrderDate(LocalDateTime.now());
         order.setOrderItems(items);
 

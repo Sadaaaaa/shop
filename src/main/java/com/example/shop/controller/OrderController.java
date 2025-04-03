@@ -7,12 +7,15 @@ import com.example.shop.model.OrderItem;
 import com.example.shop.service.CartService;
 import com.example.shop.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +49,7 @@ public class OrderController {
         List<OrderItem> orderItems = new ArrayList<>();
 
         List<CartItem> cartItems = new ArrayList<>(cart.getItems());
-        
+
         cartItems.forEach(cartItem -> {
             OrderItem orderItem = new OrderItem();
             orderItem.setProduct(cartItem.getProduct());
@@ -55,11 +58,17 @@ public class OrderController {
             orderItems.add(orderItem);
         });
 
-        Order order = orderService.createOrder(orderItems);
+        Order order = orderService.createOrder(MOCK_USER_ID, orderItems);
 
-        cartItems.forEach(item -> 
-            cartService.removeFromCart(MOCK_USER_ID, item.getProduct().getId())
+        cartItems.forEach(item ->
+                cartService.removeFromCart(MOCK_USER_ID, item.getProduct().getId())
         );
         return "redirect:/orders/" + order.getId();
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public String handleOrderNotFoundException(RuntimeException ex) {
+        return "error/404";
     }
 }
