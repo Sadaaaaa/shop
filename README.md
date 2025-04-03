@@ -90,7 +90,7 @@ Execute the following commands to run the application directly (JVM must be inst
 
 ```bash
 mvn clean install
-java -jar easypay-0.0.1-SNAPSHOT.jar
+java -jar shop-0.0.1-SNAPSHOT.jar
 ```
 
 The application will start and be available at [http://localhost:8080](http://localhost:8080).
