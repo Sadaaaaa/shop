@@ -16,22 +16,23 @@
         <div class="card mb-4">
             <div class="card-body">
                 <h5 class="card-title">Информация о заказе</h5>
-                <p class="card-text">Дата заказа: <span th:text="${#temporals.format(order.orderDate, 'dd.MM.yyyy HH:mm')}">01.01.2024</span></p>
+                <p class="card-text">Дата заказа: <span th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2024</span></p>
                 <p class="card-text">Общая сумма: <span th:text="${order.totalAmount + ' ₽'}">1000 ₽</span></p>
+                <p class="card-text">Статус: <span th:text="${order.status}">PENDING</span></p>
             </div>
         </div>
         
         <h2 class="mb-4">Товары в заказе</h2>
         <div class="order-items">
-            <div th:each="item : ${order.orderItems}" class="order-item card mb-3">
+            <div th:each="item : ${order.items}" class="order-item card mb-3">
                 <div class="row g-0">
                     <div class="col-md-2 d-flex align-items-center justify-content-center p-3">
                         <div class="order-image-container">
-                            <img th:if="${item.product.image}" 
+                            <img th:if="${item.product != null and item.product.image != null}" 
                                  th:src="@{/products/image/{id}(id=${item.product.id})}" 
                                  alt="Product Image"
                                  class="order-item-image rounded">
-                            <div th:unless="${item.product.image}" class="text-center p-3 bg-light rounded">
+                            <div th:unless="${item.product != null and item.product.image != null}" class="text-center p-3 bg-light rounded">
                                 Нет изображения
                             </div>
                         </div>
@@ -39,9 +40,9 @@
                     
                     <div class="col-md-7">
                         <div class="card-body py-3">
-                            <h4 class="card-title" th:text="${item.product.name}">Название товара</h4>
-                            <h5 class="card-subtitle mb-2 text-primary" th:text="${item.product.price + ' ₽'}">0 ₽</h5>
-                            <p class="card-text text-muted" th:text="${item.product.description}">Описание товара</p>
+                            <h4 class="card-title" th:text="${item.product != null ? item.product.name : 'Товар удален'}">Название товара</h4>
+                            <h5 class="card-subtitle mb-2 text-primary" th:text="${item.price + ' ₽'}">0 ₽</h5>
+                            <p class="card-text text-muted" th:text="${item.product != null ? item.product.description : ''}">Описание товара</p>
                         </div>
                     </div>
                     
@@ -64,6 +65,24 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script th:replace="~{fragments/header :: cart-script}"></script>
+    <script th:inline="javascript">
+        function updateCartUI(cartSize) {
+            const cartCountElement = document.getElementById("cart-count");
+            if (cartCountElement) {
+                cartCountElement.textContent = cartSize;
+                cartCountElement.style.display = cartSize > 0 ? "block" : "none";
+            }
+        }
+        
+        // Обновляем счетчик в шапке при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/cart/counter')
+                .then(response => response.json())
+                .then(count => {
+                    updateCartUI(count);
+                })
+                .catch(error => console.error('Error:', error));
+        });
+    </script>
 </body>
 </html> 

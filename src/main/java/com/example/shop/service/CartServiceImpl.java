@@ -3,191 +3,104 @@ package com.example.shop.service;
 import com.example.shop.model.Cart;
 import com.example.shop.model.CartItem;
 import com.example.shop.model.Product;
+import com.example.shop.repository.CartItemRepository;
 import com.example.shop.repository.CartRepository;
-import com.example.shop.repository.ProductRepository;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
+@RequiredArgsConstructor
 public class CartServiceImpl implements CartService {
 
-    private final ProductRepository productRepository;
     private final CartRepository cartRepository;
-
-
-    @Autowired
-    public CartServiceImpl(ProductRepository productRepository, CartRepository cartRepository) {
-        this.productRepository = productRepository;
-        this.cartRepository = cartRepository;
-    }
-
-    @Transactional
-    @Override
-    public Cart getCart(Long userId) {
-        return cartRepository.findCartByUserId(userId).orElse(Cart.getCart());
-    }
-
-    @Transactional
-    @Override
-    public List<CartItem> getCartItems(Long userId) {
-        Optional<Cart> cart = cartRepository.findCartByUserId(userId);
-        return cart.orElse(Cart.getCart()).getItems();
-    }
-
+    private final CartItemRepository cartItemRepository;
+    private final ProductService productService;
 
     @Override
-    public Integer getCartCounter(Long userId) {
-        return cartRepository.findCartByUserId(userId).orElse(Cart.getCart()).getItems().size();
+    public Mono<Cart> getCart(Long userId) {
+        return cartRepository.findByUserId(userId)
+                .switchIfEmpty(Mono.defer(() -> {
+                    Cart newCart = new Cart();
+                    newCart.setUserId(userId);
+                    return cartRepository.save(newCart);
+                }))
+                .flatMap(cart -> cartItemRepository.findByCartId(cart.getId())
+                        .flatMap(item -> productService.findProductById(item.getProductId())
+                                .map(product -> {
+                                    item.setProduct(product);
+                                    return item;
+                                }))
+                        .collectList()
+                        .map(items -> {
+                            cart.setItems(items);
+                            return cart;
+                        }));
     }
 
     @Override
-    public Integer getProductsCounter(Long userId, Long productId) {
-        List<CartItem> cartItems = cartRepository.findCartByUserId(userId).orElse(Cart.getCart()).getItems();
-
-        return cartItems.stream()
-                .filter(item -> item.getProduct().getId().equals(productId))
-                .map(CartItem::getQuantity)
-                .findFirst()
-                .orElse(0);
-    }
-
-    @Override
-    public Map<Long, Integer> getCartItemsQuantity(Long userId) {
-        List<CartItem> test = cartRepository.findCartByUserId(userId).orElse(Cart.getCart()).getItems();
-
-        return test.stream().collect(Collectors.toMap(CartItem::getId, CartItem::getQuantity));
-    }
-
-    @Transactional
-    @Override
-    public Cart addToCart(Long userId, Long productId) {
-        if (userId == null) {
-            throw new IllegalArgumentException("User ID cannot be null");
-        }
-        if (productId == null) {
-            throw new IllegalArgumentException("Product ID cannot be null");
-        }
-        
-        Cart cart = cartRepository.findCartByUserId(userId)
-                .orElseGet(() -> Cart.builder().userId(userId).items(new ArrayList<>()).build());
-
-        CartItem cartItem = cart.getItems().stream()
-                .filter(item -> productId.equals(item.getProduct().getId()))
-                .findFirst()
-                .orElseGet(() -> {
-                    Product product = productRepository.findById(productId)
-                            .orElseThrow(() -> new IllegalArgumentException("Product not found with ID: " + productId));
-
-                    CartItem newCartItem = CartItem.builder().product(product).quantity(0).build();
-                    cart.getItems().add(newCartItem);
-                    return newCartItem;
+    public Mono<Cart> addItemToCart(Long userId, CartItem item) {
+        return getCart(userId)
+                .flatMap(cart -> {
+                    item.setCartId(cart.getId());
+                    return cartItemRepository.save(item)
+                            .then(getCart(userId));
                 });
-
-        cartItem.setQuantity(cartItem.getQuantity() + 1);
-        cartRepository.save(cart);
-
-        return cart;
     }
 
-    @Transactional
     @Override
-    public Cart decreaseItems(Long userId, Long productId) {
-        if (userId == null) {
-            throw new IllegalArgumentException("User ID cannot be null");
-        }
-        if (productId == null) {
-            throw new IllegalArgumentException("Product ID cannot be null");
-        }
-        
-        Cart cart = cartRepository.findCartByUserId(userId)
-                .orElse(null);
-
-        if (cart == null) {
-            return null;
-        }
-
-        CartItem cartItem = cart.getItems().stream()
-                .filter(item -> productId.equals(item.getProduct().getId()))
-                .findFirst()
-                .orElse(null);
-
-        if (cartItem == null) {
-            return cart;
-        }
-
-        if (cartItem.getQuantity() <= 1) {
-            cart.getItems().remove(cartItem);
-        } else {
-            cartItem.setQuantity(cartItem.getQuantity() - 1);
-        }
-
-        cartRepository.save(cart);
-        return cart;
+    public Mono<Cart> removeItemFromCart(Long userId, Long productId) {
+        return getCart(userId)
+                .flatMap(cart -> cartItemRepository.deleteByCartIdAndProductId(cart.getId(), productId)
+                        .then(getCart(userId)));
     }
 
-    @Transactional
     @Override
-    public void removeFromCart(Long userId, Long productId) {
-        if (userId == null || productId == null) {
-            return;
-        }
-        
-        Cart cart = cartRepository.findCartByUserId(userId)
-                .orElse(null);
-
-        if (cart == null) {
-            return;
-        }
-
-        cart.getItems().removeIf(item -> productId.equals(item.getProduct().getId()));
-        cartRepository.save(cart);
+    public Mono<Cart> updateItemQuantity(Long userId, Long productId, int quantity) {
+        return getCart(userId)
+                .flatMap(cart -> cartItemRepository.findByCartId(cart.getId())
+                        .filter(item -> item.getProductId().equals(productId))
+                        .next()
+                        .flatMap(item -> {
+                            item.setQuantity(quantity);
+                            return cartItemRepository.save(item);
+                        })
+                        .then(getCart(userId)));
     }
 
-    @Transactional
     @Override
-    public Cart updateQuantity(Long userId, Long productId, Integer quantity) {
-        if (userId == null) {
-            throw new IllegalArgumentException("User ID cannot be null");
-        }
-        if (productId == null) {
-            throw new IllegalArgumentException("Product ID cannot be null");
-        }
-        if (quantity == null) {
-            throw new IllegalArgumentException("Quantity cannot be null");
-        }
-        
-        if (quantity <= 0) {
-            removeFromCart(userId, productId);
-            return getCart(userId);
-        }
+    public Mono<Void> clearCart(Long userId) {
+        return getCart(userId)
+                .flatMap(cart -> cartItemRepository.findByCartId(cart.getId())
+                        .flatMap(cartItemRepository::delete)
+                        .then());
+    }
 
-        Cart cart = cartRepository.findCartByUserId(userId)
-                .orElseGet(() -> Cart.builder().userId(userId).items(new ArrayList<>()).build());
+    @Override
+    public Mono<Integer> getCartCounter(Long userId) {
+        return getCart(userId)
+                .map(cart -> cart.getItems().size());
+    }
 
-        CartItem cartItem = cart.getItems().stream()
-                .filter(item -> productId.equals(item.getProduct().getId()))
-                .findFirst()
-                .orElseGet(() -> {
-                    Product product = productRepository.findById(productId)
-                            .orElseThrow(() -> new IllegalArgumentException("Product not found with ID: " + productId));
+    @Override
+    public Mono<Integer> getProductsCounter(Long userId, Long productId) {
+        return getCart(userId)
+                .map(cart -> cart.getItems().stream()
+                        .filter(item -> item.getProductId().equals(productId))
+                        .mapToInt(CartItem::getQuantity)
+                        .sum());
+    }
 
-                    CartItem newCartItem = CartItem.builder().product(product).quantity(0).build();
-                    cart.getItems().add(newCartItem);
-                    return newCartItem;
-                });
-
-        cartItem.setQuantity(quantity);
-        cartRepository.save(cart);
-
-        return cart;
+    @Override
+    public Mono<Map<Long, Integer>> getCartItemsQuantity(Long userId) {
+        return getCart(userId)
+                .map(cart -> cart.getItems().stream()
+                        .collect(Collectors.toMap(
+                                CartItem::getProductId,
+                                CartItem::getQuantity
+                        )));
     }
 }

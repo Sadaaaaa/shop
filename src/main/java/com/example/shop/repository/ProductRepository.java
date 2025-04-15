@@ -1,35 +1,37 @@
 package com.example.shop.repository;
 
 import com.example.shop.model.Product;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.r2dbc.repository.Query;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.math.BigDecimal;
-
-@Repository
-public interface ProductRepository extends JpaRepository<Product, Long> {
-
-    Page<Product> findByNameContainingIgnoreCase(String name, Pageable pageable);
-
-    Page<Product> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(String name, String description, Pageable pageable);
-
-    Page<Product> findByPriceBetween(BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
-
-    @Query("SELECT p FROM Product p WHERE " +
-            "(:name IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))) AND " +
-            "(:minPrice IS NULL OR p.price >= :minPrice) AND " +
-            "(:maxPrice IS NULL OR p.price <= :maxPrice)")
-    Page<Product> findWithFilters(
+public interface ProductRepository extends R2dbcRepository<Product, Long> {
+    
+    @Query("SELECT * FROM products WHERE LOWER(name) LIKE LOWER(CONCAT('%', :name, '%'))")
+    Flux<Product> findByNameContainingIgnoreCase(@Param("name") String name);
+    
+    @Query("SELECT * FROM products WHERE LOWER(name) LIKE LOWER(CONCAT('%', :name, '%')) OR LOWER(description) LIKE LOWER(CONCAT('%', :description, '%'))")
+    Flux<Product> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
             @Param("name") String name,
-            @Param("minPrice") BigDecimal minPrice,
-            @Param("maxPrice") BigDecimal maxPrice,
-            Pageable pageable);
+            @Param("description") String description);
+    
+    @Query("SELECT * FROM products WHERE price BETWEEN :minPrice AND :maxPrice")
+    Flux<Product> findByPriceBetween(
+            @Param("minPrice") double minPrice,
+            @Param("maxPrice") double maxPrice);
+    
+    @Query("SELECT * FROM products WHERE (:name IS NULL OR LOWER(name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
+           "AND (:minPrice IS NULL OR price >= :minPrice) " +
+           "AND (:maxPrice IS NULL OR price <= :maxPrice)")
+    Flux<Product> findWithFilters(
+            @Param("name") String name,
+            @Param("minPrice") Double minPrice,
+            @Param("maxPrice") Double maxPrice);
+    
+    @Query("SELECT * FROM products")
+    Flux<Product> findAllProducts();
 
-    @Query("SELECT p FROM Product p")
-    Page<Product> findAllProducts(Pageable pageable);
+    Mono<Product> findByName(String name);
 }

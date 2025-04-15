@@ -37,24 +37,5 @@
             </div>
         </nav>
     </header>
-
-    <script th:fragment="cart-script">
-        function updateCartCount() {
-            fetch('/cart/counter')
-                .then(response => response.json())
-                .then(count => {
-                    const cartCount = document.getElementById('cart-count');
-                    if (count > 0) {
-                        cartCount.textContent = count;
-                        cartCount.style.display = 'block';
-                    } else {
-                        cartCount.style.display = 'none';
-                    }
-                });
-        }
-
-        // Обновляем счетчик при загрузке страницы
-        document.addEventListener('DOMContentLoaded', updateCartCount);
-    </script>
 </body>
 </html> 

@@ -2,62 +2,99 @@ package com.example.shop.service;
 
 import com.example.shop.model.Product;
 import com.example.shop.repository.ProductRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Service
+@RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
 
-    @Autowired
-    public ProductServiceImpl(ProductRepository productRepository) {
-        this.productRepository = productRepository;
+    @Override
+    public Flux<Product> getAllProducts() {
+        return productRepository.findAllProducts();
     }
 
-    @Transactional(readOnly = true)
     @Override
-    public Page<Product> findAllProducts(Pageable pageable) {
-        return productRepository.findAllProducts(pageable);
+    public Mono<Product> getProductById(Long id) {
+        return productRepository.findById(id);
     }
 
-    @Transactional(readOnly = true)
     @Override
-    public Product findProductById(Long id) {
-        return productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found"));
+    public Flux<Product> searchProducts(String name, String description) {
+        if (name != null && description != null) {
+            return productRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(name, description);
+        } else if (name != null) {
+            return productRepository.findByNameContainingIgnoreCase(name);
+        }
+        return Flux.empty();
     }
 
-    @Transactional(readOnly = true)
     @Override
-    public Page<Product> findProductsByName(String name, Pageable pageable) {
-        return productRepository.findByNameContainingIgnoreCase(name, pageable);
+    public Flux<Product> filterProductsByPrice(Double minPrice, Double maxPrice) {
+        return productRepository.findByPriceBetween(minPrice, maxPrice);
     }
 
-    @Transactional(readOnly = true)
     @Override
-    public Page<Product> findProductsByNameOrDescription(String query, Pageable pageable) {
-        return productRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(query, query, pageable);
+    public Flux<Product> findWithFilters(String name, Double minPrice, Double maxPrice) {
+        return productRepository.findWithFilters(name, minPrice, maxPrice);
     }
 
-    @Transactional
     @Override
-    public Product saveProduct(Product product) {
+    public Mono<Product> saveProduct(Product product) {
         return productRepository.save(product);
     }
 
     @Override
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
+    public Mono<Void> deleteProduct(Long id) {
+        return productRepository.deleteById(id);
     }
 
     @Override
-    public void deleteProduct(Long id) {
-        productRepository.deleteById(id);
+    public Mono<Page<Product>> findProductsByNameOrDescription(String search, int page, int size, String sort) {
+        Sort.Direction direction = Sort.Direction.ASC;
+        String property = "name";
+
+        if (sort != null) {
+            switch (sort) {
+                case "name_desc" -> {
+                    direction = Sort.Direction.DESC;
+                    property = "name";
+                }
+                case "price_asc" -> {
+                    direction = Sort.Direction.ASC;
+                    property = "price";
+                }
+                case "price_desc" -> {
+                    direction = Sort.Direction.DESC;
+                    property = "price";
+                }
+            }
+        }
+
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, property));
+
+        Flux<Product> products;
+        if (search != null && !search.isEmpty()) {
+            products = productRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(search, search);
+        } else {
+            products = productRepository.findAllProducts();
+        }
+
+        return products.collectList()
+                .zipWith(productRepository.count())
+                .map(tuple -> new PageImpl<>(tuple.getT1(), pageRequest, tuple.getT2()));
     }
 
+    @Override
+    public Mono<Product> findProductById(Long id) {
+        return productRepository.findById(id);
+    }
 }

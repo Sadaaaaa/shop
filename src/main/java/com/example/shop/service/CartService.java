@@ -2,26 +2,24 @@ package com.example.shop.service;
 
 import com.example.shop.model.Cart;
 import com.example.shop.model.CartItem;
+import reactor.core.publisher.Mono;
 
-import java.util.List;
 import java.util.Map;
 
 public interface CartService {
-    Cart getCart(Long userId);
+    Mono<Cart> getCart(Long userId);
 
-    List<CartItem> getCartItems(Long userId);
+    Mono<Cart> addItemToCart(Long userId, CartItem item);
 
-    Cart addToCart(Long userId, Long productId);
+    Mono<Cart> removeItemFromCart(Long userId, Long productId);
 
-    Cart decreaseItems(Long userId, Long productId);
+    Mono<Cart> updateItemQuantity(Long userId, Long productId, int quantity);
 
-    void removeFromCart(Long userId, Long productId);
+    Mono<Void> clearCart(Long userId);
 
-    Integer getCartCounter(Long userId);
+    Mono<Integer> getCartCounter(Long userId);
 
-    Integer getProductsCounter(Long userId, Long productId);
+    Mono<Integer> getProductsCounter(Long userId, Long productId);
 
-    Map<Long, Integer> getCartItemsQuantity(Long userId);
-
-    Cart updateQuantity(Long userId, Long productId, Integer quantity);
+    Mono<Map<Long, Integer>> getCartItemsQuantity(Long userId);
 }

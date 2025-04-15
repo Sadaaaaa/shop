@@ -3,7 +3,9 @@ package com.example.shop.controller;
 import com.example.shop.BaseTest;
 import com.example.shop.TestData;
 import com.example.shop.model.Product;
+import com.example.shop.model.Order;
 import com.example.shop.service.ProductService;
+import com.example.shop.service.OrderService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +13,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -28,6 +32,9 @@ class AdminControllerTest extends BaseTest {
     @MockBean
     private ProductService productService;
 
+    @MockBean
+    private OrderService orderService;
+
     private Product testProduct;
     private List<Product> testProducts;
 
@@ -36,8 +43,9 @@ class AdminControllerTest extends BaseTest {
         testProduct = TestData.createTestProduct();
         testProducts = TestData.createTestProducts(3);
         
-        when(productService.getAllProducts()).thenReturn(testProducts);
-        when(productService.saveProduct(any(Product.class))).thenReturn(testProduct);
+        when(productService.getAllProducts()).thenReturn(Flux.fromIterable(testProducts));
+        when(productService.saveProduct(any(Product.class))).thenReturn(Mono.just(testProduct));
+        when(productService.deleteProduct(anyLong())).thenReturn(Mono.empty());
     }
 
     @Test
@@ -76,5 +84,29 @@ class AdminControllerTest extends BaseTest {
                 .andExpect(redirectedUrl("/admin"));
 
         verify(productService).deleteProduct(testProduct.getId());
+    }
+
+    @Test
+    void listProducts_ShouldReturnProductsList() throws Exception {
+        List<Product> products = TestData.createTestProducts(3);
+        when(productService.getAllProducts()).thenReturn(Flux.fromIterable(products));
+
+        mockMvc.perform(get("/admin/products"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("admin/products"))
+                .andExpect(model().attributeExists("products"))
+                .andExpect(model().attribute("products", products));
+    }
+
+    @Test
+    void listOrders_ShouldReturnOrdersList() throws Exception {
+        List<Order> testOrders = List.of(TestData.createTestOrder());
+        when(orderService.getAllOrders(1L)).thenReturn(Flux.fromIterable(testOrders));
+
+        mockMvc.perform(get("/admin/orders"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("admin/orders"))
+                .andExpect(model().attributeExists("orders"))
+                .andExpect(model().attribute("orders", testOrders));
     }
 } 

@@ -1,103 +1,101 @@
 package com.example.shop.service;
 
-import com.example.shop.BaseTest;
-import com.example.shop.TestData;
 import com.example.shop.model.Cart;
+import com.example.shop.model.CartItem;
 import com.example.shop.model.Product;
 import com.example.shop.repository.CartRepository;
 import com.example.shop.repository.ProductRepository;
+import com.example.shop.TestData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class CartServiceTest extends BaseTest {
+@ExtendWith(MockitoExtension.class)
+class CartServiceTest {
 
-    @Autowired
-    private CartService cartService;
-
-    @MockBean
+    @Mock
     private CartRepository cartRepository;
 
-    @MockBean
+    @Mock
     private ProductRepository productRepository;
 
-    private Product testProduct;
+    @InjectMocks
+    private CartServiceImpl cartService;
+
     private Cart testCart;
+    private Product testProduct;
+    private CartItem testCartItem;
 
     @BeforeEach
     void setUp() {
-        testProduct = TestData.createTestProduct();
         testCart = TestData.createTestCart();
-
-        when(productRepository.findById(testProduct.getId()))
-                .thenReturn(Optional.of(testProduct));
-        when(cartRepository.findCartByUserId(TEST_USER_ID))
-                .thenReturn(Optional.of(testCart));
-        when(cartRepository.save(any(Cart.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        testProduct = TestData.createTestProduct();
+        testCartItem = TestData.createTestCartItem(testProduct);
     }
 
     @Test
-    void addToCart_NewProduct_ShouldAddProductToCart() {
-        cartService.addToCart(TEST_USER_ID, testProduct.getId());
+    void getCart_ShouldReturnCart() {
+        when(cartRepository.findByUserId(1L)).thenReturn(Mono.just(testCart));
 
-        verify(cartRepository).save(any(Cart.class));
-        assertEquals(1, testCart.getItems().size());
-        assertEquals(testProduct.getId(), testCart.getItems().get(0).getProduct().getId());
-        assertEquals(1, testCart.getItems().get(0).getQuantity());
+        StepVerifier.create(cartService.getCart(1L))
+                .expectNext(testCart)
+                .verifyComplete();
     }
 
     @Test
-    void addToCart_ExistingProduct_ShouldIncreaseQuantity() {
-        cartService.addToCart(TEST_USER_ID, testProduct.getId());
-        cartService.addToCart(TEST_USER_ID, testProduct.getId());
+    void addItemToCart_ShouldAddItemAndReturnCart() {
+        when(cartRepository.findByUserId(1L)).thenReturn(Mono.just(testCart));
+        when(productRepository.findById(1L)).thenReturn(Mono.just(testProduct));
+        when(cartRepository.save(any(Cart.class))).thenReturn(Mono.just(testCart));
 
-        verify(cartRepository, times(2)).save(any(Cart.class));
-        assertEquals(1, testCart.getItems().size());
-        assertEquals(2, testCart.getItems().get(0).getQuantity());
+        StepVerifier.create(cartService.addItemToCart(1L, testCartItem))
+                .expectNext(testCart)
+                .verifyComplete();
     }
 
     @Test
-    void decreaseItems_ExistingProduct_ShouldDecreaseQuantity() {
-        cartService.addToCart(TEST_USER_ID, testProduct.getId());
-        cartService.addToCart(TEST_USER_ID, testProduct.getId());
-        cartService.decreaseItems(TEST_USER_ID, testProduct.getId());
+    void removeItemFromCart_ShouldRemoveItemAndReturnCart() {
+        when(cartRepository.findByUserId(1L)).thenReturn(Mono.just(testCart));
+        when(cartRepository.save(any(Cart.class))).thenReturn(Mono.just(testCart));
 
-        assertEquals(1, testCart.getItems().get(0).getQuantity());
+        StepVerifier.create(cartService.removeItemFromCart(1L, 1L))
+                .expectNext(testCart)
+                .verifyComplete();
     }
 
     @Test
-    void removeFromCart_ExistingProduct_ShouldRemoveProduct() {
-        cartService.addToCart(TEST_USER_ID, testProduct.getId());
-        cartService.removeFromCart(TEST_USER_ID, testProduct.getId());
+    void updateItemQuantity_ShouldUpdateQuantityAndReturnCart() {
+        when(cartRepository.findByUserId(1L)).thenReturn(Mono.just(testCart));
+        when(cartRepository.save(any(Cart.class))).thenReturn(Mono.just(testCart));
 
-        assertTrue(testCart.getItems().isEmpty());
+        StepVerifier.create(cartService.updateItemQuantity(1L, 1L, 5))
+                .expectNext(testCart)
+                .verifyComplete();
     }
 
     @Test
-    void updateQuantity_ValidQuantity_ShouldUpdateProductQuantity() {
-        cartService.addToCart(TEST_USER_ID, testProduct.getId());
-        cartService.updateQuantity(TEST_USER_ID, testProduct.getId(), 5);
+    void getCartCounter_ShouldReturnItemCount() {
+        when(cartRepository.findByUserId(1L)).thenReturn(Mono.just(testCart));
 
-        assertEquals(5, testCart.getItems().get(0).getQuantity());
+        Integer count = cartService.getCartCounter(1L);
+        assertEquals(1, count);
     }
 
     @Test
-    void getCart_ExistingCart_ShouldReturnCart() {
-        Cart result = cartService.getCart(TEST_USER_ID);
+    void getProductsCounter_ShouldReturnProductCount() {
+        when(cartRepository.findByUserId(1L)).thenReturn(Mono.just(testCart));
 
-        assertNotNull(result);
-        assertEquals(TEST_USER_ID, result.getUserId());
+        Integer count = cartService.getProductsCounter(1L, 1L);
+        assertEquals(1, count);
     }
 } 

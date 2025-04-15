@@ -5,23 +5,25 @@ DROP TABLE IF EXISTS order_items CASCADE;
 DROP TABLE IF EXISTS orders CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
 
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
     id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255),
+    name VARCHAR(255) NOT NULL,
     description TEXT,
     price DECIMAL(10,2) NOT NULL,
     image BYTEA
 );
 
-CREATE TABLE carts (
+CREATE TABLE IF NOT EXISTS carts (
     id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT
+    user_id BIGINT NOT NULL UNIQUE
 );
 
-CREATE TABLE cart_items (
+CREATE TABLE IF NOT EXISTS cart_items (
     id BIGSERIAL PRIMARY KEY,
+    cart_id BIGINT NOT NULL REFERENCES carts(id),
+    product_id BIGINT NOT NULL REFERENCES products(id),
     quantity INTEGER NOT NULL,
-    product_id BIGINT REFERENCES products(id)
+    price DECIMAL(10,2) NOT NULL
 );
 
 CREATE TABLE carts_items (
@@ -29,17 +31,18 @@ CREATE TABLE carts_items (
     items_id BIGINT UNIQUE REFERENCES cart_items(id)
 );
 
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
-    order_date TIMESTAMP,
-    total_price DECIMAL(10,2)
+    created_at TIMESTAMP NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    total_amount DECIMAL(10,2) NOT NULL
 );
 
-CREATE TABLE order_items (
+CREATE TABLE IF NOT EXISTS order_items (
     id BIGSERIAL PRIMARY KEY,
-    order_id BIGINT REFERENCES orders(id),
-    product_id BIGINT REFERENCES products(id),
-    quantity INTEGER,
-    price DECIMAL(10,2)
+    order_id BIGINT NOT NULL REFERENCES orders(id),
+    product_id BIGINT NOT NULL REFERENCES products(id),
+    quantity INTEGER NOT NULL,
+    price DECIMAL(10,2) NOT NULL
 );

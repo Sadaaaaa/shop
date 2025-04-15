@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS carts_items (
 
 CREATE TABLE IF NOT EXISTS orders (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    order_date TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL,
     total_price DOUBLE NOT NULL
 );
 

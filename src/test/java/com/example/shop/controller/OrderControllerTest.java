@@ -1,37 +1,30 @@
 package com.example.shop.controller;
 
-import com.example.shop.BaseTest;
 import com.example.shop.TestData;
-import com.example.shop.model.Cart;
 import com.example.shop.model.Order;
+import com.example.shop.model.OrderItem;
 import com.example.shop.service.CartService;
 import com.example.shop.service.OrderService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.Arrays;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
-@AutoConfigureMockMvc
-class OrderControllerTest extends BaseTest {
+@WebFluxTest(OrderController.class)
+class OrderControllerTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    private WebTestClient webTestClient;
 
     @MockBean
     private OrderService orderService;
@@ -40,54 +33,77 @@ class OrderControllerTest extends BaseTest {
     private CartService cartService;
 
     private Order testOrder;
-    private Cart testCart;
+    private List<OrderItem> testOrderItems;
 
     @BeforeEach
     void setUp() {
         testOrder = TestData.createTestOrder();
-        testCart = TestData.createTestCart();
-        testCart.getItems().add(TestData.createTestCartItem(TestData.createTestProduct()));
-
-        when(cartService.getCart(any())).thenReturn(testCart);
-        when(orderService.createOrder(anyLong(), any())).thenReturn(testOrder);
-        when(orderService.getOrderById(testOrder.getId())).thenReturn(testOrder);
-        when(orderService.getAllOrders()).thenReturn(Arrays.asList(testOrder));
+        testOrderItems = List.of(TestData.createTestOrderItem());
     }
 
     @Test
-    void createOrder_ValidRequest_ShouldRedirectToOrder() throws Exception {
-        mockMvc.perform(post("/orders/create"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrlPattern("/orders/*"));
+    void getAllOrders_ShouldReturnOrders() {
+        when(orderService.getAllOrders(TestData.TEST_USER_ID))
+                .thenReturn(TestData.createTestOrdersFlux());
 
-        verify(orderService).createOrder(anyLong(), any());
+        webTestClient.get()
+                .uri("/api/orders/{userId}", TestData.TEST_USER_ID)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(Order.class)
+                .hasSize(1)
+                .contains(testOrder);
     }
 
     @Test
-    void viewOrder_ExistingOrder_ShouldReturnOrderPage() throws Exception {
-        mockMvc.perform(get("/orders/{id}", testOrder.getId()))
-                .andExpect(status().isOk())
-                .andExpect(view().name("order"))
-                .andExpect(model().attributeExists("order"));
+    void getOrderById_ShouldReturnOrder() {
+        when(orderService.getOrderById(TestData.TEST_USER_ID, TestData.TEST_ORDER_ID))
+                .thenReturn(TestData.createTestOrderMono());
 
-        verify(orderService).getOrderById(testOrder.getId());
+        webTestClient.get()
+                .uri("/api/orders/{userId}/{orderId}", TestData.TEST_USER_ID, TestData.TEST_ORDER_ID)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(Order.class)
+                .isEqualTo(testOrder);
     }
 
     @Test
-    void listOrders_ShouldReturnOrdersPage() throws Exception {
-        mockMvc.perform(get("/orders"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("orders"))
-                .andExpect(model().attributeExists("orders"));
+    void createOrder_ShouldCreateOrder() {
+        when(orderService.createOrder(TestData.TEST_USER_ID, testOrderItems))
+                .thenReturn(TestData.createTestOrderMono());
 
-        verify(orderService).getAllOrders();
+        webTestClient.post()
+                .uri("/api/orders/{userId}", TestData.TEST_USER_ID)
+                .bodyValue(testOrderItems)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(Order.class)
+                .isEqualTo(testOrder);
     }
 
     @Test
-    void viewOrder_NonExistentOrder_ShouldThrowException() throws Exception {
-        when(orderService.getOrderById(anyLong())).thenThrow(new RuntimeException("Order not found"));
+    void updateOrderStatus_ShouldUpdateStatus() {
+        when(orderService.updateOrderStatus(TestData.TEST_USER_ID, TestData.TEST_ORDER_ID, "PROCESSING"))
+                .thenReturn(TestData.createTestOrderMono());
 
-        mockMvc.perform(get("/orders/{id}", 999L))
-                .andExpect(status().isNotFound());
+        webTestClient.put()
+                .uri("/api/orders/{userId}/{orderId}/status?status=PROCESSING", 
+                    TestData.TEST_USER_ID, TestData.TEST_ORDER_ID)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(Order.class)
+                .isEqualTo(testOrder);
+    }
+
+    @Test
+    void deleteOrder_ShouldDeleteOrder() {
+        when(orderService.deleteOrder(TestData.TEST_USER_ID, TestData.TEST_ORDER_ID))
+                .thenReturn(Mono.empty());
+
+        webTestClient.delete()
+                .uri("/api/orders/{userId}/{orderId}", TestData.TEST_USER_ID, TestData.TEST_ORDER_ID)
+                .exchange()
+                .expectStatus().isOk();
     }
 } 

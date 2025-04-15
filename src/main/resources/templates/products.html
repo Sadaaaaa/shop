@@ -20,11 +20,11 @@
                 </div>
                 <div class="col-md-4">
                     <select class="form-select" name="sort">
-                        <option value="" th:selected="${param.sort == null}">По умолчанию</option>
-                        <option value="name_asc" th:selected="${param.sort != null and param.sort[0] == 'name_asc'}">Название (А-Я)</option>
-                        <option value="name_desc" th:selected="${param.sort != null and param.sort[0] == 'name_desc'}">Название (Я-А)</option>
-                        <option value="price_asc" th:selected="${param.sort != null and param.sort[0] == 'price_asc'}">Цена (по возрастанию)</option>
-                        <option value="price_desc" th:selected="${param.sort != null and param.sort[0] == 'price_desc'}">Цена (по убыванию)</option>
+                        <option value="" th:selected="${param.sort == null or param.sort.size() == 0}">По умолчанию</option>
+                        <option value="name_asc" th:selected="${param.sort != null and param.sort.size() > 0 and param.sort[0] == 'name_asc'}">Название (А-Я)</option>
+                        <option value="name_desc" th:selected="${param.sort != null and param.sort.size() > 0 and param.sort[0] == 'name_desc'}">Название (Я-А)</option>
+                        <option value="price_asc" th:selected="${param.sort != null and param.sort.size() > 0 and param.sort[0] == 'price_asc'}">Цена (по возрастанию)</option>
+                        <option value="price_desc" th:selected="${param.sort != null and param.sort.size() > 0 and param.sort[0] == 'price_desc'}">Цена (по убыванию)</option>
                     </select>
                 </div>
                 <div class="col-md-4">
@@ -37,7 +37,7 @@
             <div class="col" th:each="product : ${products}">
                 <div class="card h-100 product-card">
                     <a th:href="@{/products/{id}(id=${product.id})}" class="card-link text-decoration-none text-dark">
-                        <img th:if="${product.image}" th:src="@{/products/image/{id}(id=${product.id})}" class="card-img-top" alt="Product Image">
+                        <img th:if="${product.image != null}" th:src="@{/products/image/{id}(id=${product.id})}" class="card-img-top" alt="Product Image">
                         <div class="card-body">
                             <h5 class="card-title" th:text="${product.name}"></h5>
                             <p class="card-text" th:text="${product.description}"></p>
@@ -50,8 +50,8 @@
                                 <input type="hidden" name="productId" th:value="${product.id}"/>
                                 <button type="submit" class="btn btn-primary">
                                     В корзину
-                                    <span th:if="${cart.items.?[product.id == __${product.id}__].size() > 0}"
-                                        th:text="'(' + ${cart.items.?[product.id == __${product.id}__][0].quantity} + ')'"></span>
+                                    <span th:if="${cart != null and cart.items != null and cart.items.?[productId == __${product.id}__].size() > 0}"
+                                        th:text="'(' + ${cart.items.?[productId == __${product.id}__][0].quantity} + ')'"></span>
                                 </button>
                                 <button type="button" class="btn btn-outline-danger decrease-btn" th:attr="data-product-id=${product.id}">
                                     -
@@ -85,15 +85,15 @@
                     <div class="d-flex justify-content-center justify-content-md-end align-items-center">
                         <form method="get" action="/" class="page-size-form d-flex align-items-center">
                             <input type="hidden" name="page" th:value="${currentPage}"/>
-                            <input type="hidden" name="sort" th:value="${param.sort != null ? param.sort[0] : ''}"/>
-                            <input type="hidden" name="search" th:value="${param.search != null ? param.search[0] : ''}"/>
+                            <input type="hidden" name="sort" th:value="${param.sort != null and param.sort.size() > 0 ? param.sort[0] : ''}"/>
+                            <input type="hidden" name="search" th:value="${param.search != null and param.search.size() > 0 ? param.search[0] : ''}"/>
 
                             <label for="size-select" class="me-2">Товаров на странице:</label>
                             <select id="size-select" name="size" class="form-select" style="width: 80px;" onchange="this.form.submit()">
-                                <option value="10" th:selected="${param.size != null and param.size[0] == '10'}">10</option>
-                                <option value="20" th:selected="${param.size != null and param.size[0] == '20'}">20</option>
-                                <option value="50" th:selected="${param.size != null and param.size[0] == '50'}">50</option>
-                                <option value="100" th:selected="${param.size != null and param.size[0] == '100'}">100</option>
+                                <option value="10" th:selected="${param.size == null or param.size.size() == 0 or param.size[0] == '10'}">10</option>
+                                <option value="20" th:selected="${param.size != null and param.size.size() > 0 and param.size[0] == '20'}">20</option>
+                                <option value="50" th:selected="${param.size != null and param.size.size() > 0 and param.size[0] == '50'}">50</option>
+                                <option value="100" th:selected="${param.size != null and param.size.size() > 0 and param.size[0] == '100'}">100</option>
                             </select>
                         </form>
                     </div>
@@ -103,84 +103,147 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script th:replace="~{fragments/header :: cart-script}"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Предотвращаем срабатывание клика по ссылке при клике на форму/кнопки
-            document.querySelectorAll('.card-footer').forEach(footer => {
-                footer.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                });
+    <script th:inline="javascript">
+        function updateCartUI(cartSize) {
+            const cartSizeElement = document.getElementById("cart-count");
+            if (cartSizeElement) {
+                cartSizeElement.textContent = cartSize;
+                cartSizeElement.style.display = cartSize > 0 ? "block" : "none";
+            }
+        }
+
+        // Функция для обновления счетчика на кнопке "В корзину"
+        function updateButtonCounter(button, quantity) {
+            if (quantity > 0) {
+                // Проверяем, есть ли уже span с количеством
+                let span = button.querySelector('span');
+                if (!span) {
+                    // Если нет, создаем новый
+                    span = document.createElement('span');
+                    button.appendChild(document.createTextNode(' '));
+                    button.appendChild(span);
+                }
+                span.textContent = `(${quantity})`;
+            } else {
+                button.textContent = "В корзину";
+            }
+        }
+
+        // Функция для управления видимостью кнопки "Уменьшить"
+        function toggleDecreaseButtonVisibility(productId, quantity) {
+            const form = document.getElementById(`form-${productId}`);
+            if (!form) {
+                console.error(`Ошибка: форма с id="form-${productId}" не найдена.`);
+                return;
+            }
+
+            const decreaseButton = form.querySelector(".decrease-btn");
+            if (decreaseButton) {
+                decreaseButton.style.display = quantity > 0 ? "inline-block" : "none";
+            }
+        }
+
+        // Инициализация начального состояния кнопок "Уменьшить" при загрузке страницы
+        document.addEventListener("DOMContentLoaded", function() {
+            // Обновляем счетчик в шапке
+            fetch('/cart/counter')
+                .then(response => response.json())
+                .then(count => {
+                    updateCartUI(count);
+                })
+                .catch(error => console.error('Error:', error));
+
+            // Скрываем кнопки "Уменьшить" для товаров с нулевым количеством
+            document.querySelectorAll(".cart-form").forEach(function(form) {
+                const productIdInput = form.querySelector('input[name="productId"]');
+                if (!productIdInput) return;
+
+                const productId = productIdInput.value;
+                const button = form.querySelector('button[type="submit"]');
+                if (!button) return;
+
+                const span = button.querySelector('span');
+                const quantity = span ? parseInt(span.textContent.match(/\((\d+)\)/)[1]) : 0;
+
+                toggleDecreaseButtonVisibility(productId, quantity);
             });
 
-            // Обработка добавления в корзину
-            document.querySelectorAll('.cart-form').forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const productIdInput = this.querySelector('input[name="productId"]');
-                    const productId = productIdInput ? productIdInput.value : null;
-                    
-                    if (!productId) {
-                        console.error('ProductId не найден');
-                        return;
-                    }
-                    
-                    fetch('/cart/add?productId=' + encodeURIComponent(productId), {
-                        method: 'POST'
-                    }).then(response => {
-                        if (!response.ok) {
-                            throw new Error('Ошибка при добавлении товара в корзину');
-                        }
+            // Обработчик добавления товара в корзину
+            document.querySelectorAll('.cart-form').forEach(function(form) {
+                form.addEventListener("submit", function(event) {
+                    event.preventDefault();
+
+                    const productIdInput = form.querySelector('input[name="productId"]');
+                    if (!productIdInput) return;
+
+                    const productId = productIdInput.value;
+                    const button = form.querySelector('button[type="submit"]');
+
+                    fetch(`/cart/add?productId=${encodeURIComponent(productId)}`, {
+                        method: "POST"
+                    })
+                    .then(response => {
+                        if (!response.ok) throw new Error("Ошибка при добавлении товара");
                         return response.json();
-                    }).then(() => {
-                        // Обновляем счетчик корзины
-                        updateCartCount();
-                        // Перезагружаем страницу для обновления количества товаров
-                        window.location.reload();
-                    }).catch(error => {
-                        console.error('Ошибка:', error);
+                    })
+                    .then(cart => {
+                        updateCartUI(cart.items.length);
+
+                        const productItem = cart.items.find(item => item.productId == productId);
+                        const quantity = productItem ? productItem.quantity : 0;
+
+                        updateButtonCounter(button, quantity);
+                        toggleDecreaseButtonVisibility(productId, quantity);
+                    })
+                    .catch(error => {
+                        console.error("Ошибка:", error);
                     });
                 });
             });
 
-            // Обработка уменьшения количества
-            document.querySelectorAll('.decrease-btn').forEach(button => {
-                button.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const productId = this.getAttribute('data-product-id');
-                    
+            // Обработчик уменьшения количества товара
+            document.querySelectorAll(".decrease-btn").forEach(function(button) {
+                button.addEventListener("click", function() {
+                    const productId = button.getAttribute("data-product-id");
                     if (!productId) {
-                        console.error('ProductId не найден');
+                        console.error("Ошибка: productId не найден.");
                         return;
                     }
-                    
-                    fetch('/cart/decrease?productId=' + encodeURIComponent(productId), {
-                        method: 'POST'
-                    }).then(response => {
-                        if (!response.ok) {
-                            throw new Error('Ошибка при уменьшении количества товара');
-                        }
-                        return response.json();
-                    }).then(() => {
-                        // Обновляем счетчик корзины
-                        updateCartCount();
-                        // Перезагружаем страницу для обновления количества товаров
-                        window.location.reload();
-                    }).catch(error => {
-                        console.error('Ошибка:', error);
-                    });
-                });
-            });
 
-            // Делаем всю карточку кликабельной
-            document.querySelectorAll('.product-card').forEach(card => {
-                card.addEventListener('click', function() {
-                    const link = this.querySelector('.card-link');
-                    if (link) {
-                        window.location.href = link.getAttribute('href');
-                    }
+                    fetch(`/cart/decrease?productId=${encodeURIComponent(productId)}`, {
+                        method: "POST"
+                    })
+                    .then(response => {
+                        if (!response.ok) throw new Error("Ошибка при уменьшении товара");
+                        return response.json();
+                    })
+                    .then(cart => {
+                        updateCartUI(cart.items.length);
+
+                        const form = document.getElementById(`form-${productId}`);
+                        if (!form) {
+                            console.error(`Ошибка: форма с id="form-${productId}" не найдена.`);
+                            return;
+                        }
+
+                        const addButton = form.querySelector('button[type="submit"]');
+                        if (!addButton) {
+                            console.error(`Ошибка: кнопка "В корзину" не найдена в форме form-${productId}`);
+                            return;
+                        }
+
+                        const productItem = cart.items.find(item => item.productId == productId);
+                        const quantity = productItem ? productItem.quantity : 0;
+
+                        // Обновляем счетчик на кнопке "В корзину"
+                        updateButtonCounter(addButton, quantity);
+
+                        // Обновляем видимость кнопки "Уменьшить"
+                        toggleDecreaseButtonVisibility(productId, quantity);
+                    })
+                    .catch(error => {
+                        console.error("Ошибка:", error);
+                    });
                 });
             });
         });
