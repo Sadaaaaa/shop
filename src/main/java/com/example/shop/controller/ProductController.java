@@ -59,6 +59,6 @@ public class ProductController {
         return productService.findProductById(id)
                 .map(Product::getImage)
                 .filter(image -> image != null && image.length > 0)
-                .switchIfEmpty(Mono.error(new RuntimeException("Image not found")));
+                .switchIfEmpty(Mono.just(new byte[0]));
     }
 }
