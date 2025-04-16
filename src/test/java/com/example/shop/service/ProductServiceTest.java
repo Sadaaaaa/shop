@@ -1,8 +1,8 @@
 package com.example.shop.service;
 
+import com.example.shop.TestData;
 import com.example.shop.model.Product;
 import com.example.shop.repository.ProductRepository;
-import com.example.shop.TestData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

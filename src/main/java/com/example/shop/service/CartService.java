@@ -4,8 +4,6 @@ import com.example.shop.model.Cart;
 import com.example.shop.model.CartItem;
 import reactor.core.publisher.Mono;
 
-import java.util.Map;
-
 public interface CartService {
     Mono<Cart> getCart(Long userId);
 
@@ -21,5 +19,4 @@ public interface CartService {
 
     Mono<Integer> getProductsCounter(Long userId, Long productId);
 
-    Mono<Map<Long, Integer>> getCartItemsQuantity(Long userId);
 }

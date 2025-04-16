@@ -2,7 +2,7 @@
 
 ## Overview
 
-SHOP APP is a robust application for managing purchases efficiently. It offers flexible deployment options using either Docker or Maven to suit your development and production needs.
+SHOP APP is a reactive application for managing purchases efficiently. It offers flexible deployment options using either Docker or Maven to suit your development and production needs.
 
 ## Requirements
 

@@ -7,7 +7,6 @@
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
-    <!-- Подключаем общий хедер -->
     <div th:replace="~{fragments/header :: header}"></div>
 
     <div class="container mt-4">
@@ -75,22 +74,19 @@
                 cartCountElement.style.display = cartSize > 0 ? "block" : "none";
             }
         }
-        
-        // Функция для обновления счетчика количества
+
         function updateQuantityUI(productId, quantity) {
             const quantityElement = document.getElementById(`quantity-${productId}`);
             if (quantityElement) {
                 quantityElement.querySelector('span').textContent = quantity;
             }
-            
-            // Обновляем видимость кнопки уменьшения
+
             const decreaseBtn = document.querySelector(`.decrease-btn[data-product-id="${productId}"]`);
             if (decreaseBtn) {
                 decreaseBtn.style.display = quantity > 0 ? 'inline-block' : 'none';
             }
         }
-        
-        // Обновляем счетчик в шапке при загрузке страницы
+
         document.addEventListener('DOMContentLoaded', function() {
             fetch('/cart/counter')
                 .then(response => response.json())
@@ -99,13 +95,11 @@
                 })
                 .catch(error => console.error('Error:', error));
                 
-            // Обработка добавления в корзину
             const cartForm = document.querySelector('.cart-form');
             if (cartForm) {
                 cartForm.addEventListener('submit', function(e) {
                     e.preventDefault();
-                    
-                    // Получаем productId из скрытого поля формы
+
                     const productIdInput = cartForm.querySelector('input[name="productId"]');
                     const productId = productIdInput ? productIdInput.value : null;
                     
@@ -122,14 +116,11 @@
                         }
                         return response.json();
                     }).then(cart => {
-                        // Обновляем счетчик корзины
                         updateCartUI(cart.items.length);
-                        
-                        // Находим этот товар в корзине
+
                         const productItem = cart.items.find(item => item.productId == productId);
                         const quantity = productItem ? productItem.quantity : 0;
-                        
-                        // Обновляем отображение количества
+
                         updateQuantityUI(productId, quantity);
                     }).catch(error => {
                         console.error('Ошибка:', error);
@@ -137,10 +128,8 @@
                 });
             }
 
-            // Обработка уменьшения количества
             const decreaseButton = document.querySelector('.decrease-btn');
             if (decreaseButton) {
-                // Получаем productId из атрибута data-product-id
                 const productId = decreaseButton.getAttribute('data-product-id');
                 
                 decreaseButton.addEventListener('click', function() {
@@ -157,14 +146,11 @@
                         }
                         return response.json();
                     }).then(cart => {
-                        // Обновляем счетчик корзины
                         updateCartUI(cart.items.length);
                         
-                        // Находим этот товар в корзине
                         const productItem = cart.items.find(item => item.productId == productId);
                         const quantity = productItem ? productItem.quantity : 0;
                         
-                        // Обновляем отображение количества
                         updateQuantityUI(productId, quantity);
                     }).catch(error => {
                         console.error('Ошибка:', error);

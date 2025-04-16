@@ -1,25 +1,24 @@
 package com.example.shop.service;
 
+import com.example.shop.TestData;
 import com.example.shop.model.Cart;
 import com.example.shop.model.CartItem;
 import com.example.shop.model.Product;
-import com.example.shop.repository.CartRepository;
 import com.example.shop.repository.CartItemRepository;
+import com.example.shop.repository.CartRepository;
 import com.example.shop.repository.ProductRepository;
-import com.example.shop.TestData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import reactor.core.publisher.Mono;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)

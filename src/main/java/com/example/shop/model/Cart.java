@@ -14,7 +14,7 @@ public class Cart {
     @Id
     private Long id;
     private Long userId;
-    
+
     @Transient
     private List<CartItem> items = new ArrayList<>();
 }

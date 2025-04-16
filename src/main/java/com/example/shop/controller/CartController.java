@@ -6,11 +6,18 @@ import com.example.shop.model.CartItem;
 import com.example.shop.service.CartService;
 import com.example.shop.service.ProductService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import reactor.core.publisher.Mono;
 
 @Controller
@@ -19,7 +26,7 @@ import reactor.core.publisher.Mono;
 public class CartController {
     private final CartService cartService;
     private final ProductService productService;
-    private static final Long MOCK_USER = 1L;
+    private static final Long MOCK_USER = 1L; // TODO: to_reviewer: я хотел убрать в сервис, но тогда неочевидно, что пользователь должен приходить в контроллер с фронта
 
     @GetMapping
     public Mono<String> getCartPage(Model model) {
@@ -57,14 +64,14 @@ public class CartController {
         if (productId == null) {
             return Mono.error(new IllegalArgumentException("Product ID is required"));
         }
-        
+
         return cartService.getCart(MOCK_USER)
                 .flatMap(cart -> {
                     CartItem existingItem = cart.getItems().stream()
                             .filter(item -> item.getProductId().equals(productId))
                             .findFirst()
                             .orElse(null);
-                    
+
                     if (existingItem != null) {
                         return cartService.updateItemQuantity(MOCK_USER, productId, existingItem.getQuantity() + 1);
                     } else {
@@ -92,7 +99,7 @@ public class CartController {
                             .filter(i -> i.getProductId().equals(productId))
                             .findFirst()
                             .orElseThrow(() -> new IllegalArgumentException("Item not found in cart"));
-                    
+
                     if (item.getQuantity() > 1) {
                         item.setQuantity(item.getQuantity() - 1);
                         return cartService.updateItemQuantity(MOCK_USER, productId, item.getQuantity());
@@ -137,7 +144,7 @@ public class CartController {
 
     @PutMapping("/items/{productId}/quantity")
     public Mono<ResponseEntity<Cart>> updateItemQuantity(@PathVariable Long productId,
-                                                        @RequestParam int quantity) {
+                                                         @RequestParam int quantity) {
         return cartService.updateItemQuantity(MOCK_USER, productId, quantity)
                 .map(ResponseEntity::ok);
     }

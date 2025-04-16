@@ -2,15 +2,11 @@ package com.example.shop.service;
 
 import com.example.shop.model.Cart;
 import com.example.shop.model.CartItem;
-import com.example.shop.model.Product;
 import com.example.shop.repository.CartItemRepository;
 import com.example.shop.repository.CartRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -92,15 +88,5 @@ public class CartServiceImpl implements CartService {
                         .filter(item -> item.getProductId().equals(productId))
                         .mapToInt(CartItem::getQuantity)
                         .sum());
-    }
-
-    @Override
-    public Mono<Map<Long, Integer>> getCartItemsQuantity(Long userId) {
-        return getCart(userId)
-                .map(cart -> cart.getItems().stream()
-                        .collect(Collectors.toMap(
-                                CartItem::getProductId,
-                                CartItem::getQuantity
-                        )));
     }
 }

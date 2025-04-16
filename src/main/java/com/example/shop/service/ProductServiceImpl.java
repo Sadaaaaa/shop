@@ -97,32 +97,32 @@ public class ProductServiceImpl implements ProductService {
             products = productRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(search, search)
                     .sort((p1, p2) -> {
                         if (property.equals("name")) {
-                            return direction == Sort.Direction.ASC ? 
-                                   p1.getName().compareToIgnoreCase(p2.getName()) :
-                                   p2.getName().compareToIgnoreCase(p1.getName());
+                            return direction == Sort.Direction.ASC ?
+                                    p1.getName().compareToIgnoreCase(p2.getName()) :
+                                    p2.getName().compareToIgnoreCase(p1.getName());
                         } else {
-                            return direction == Sort.Direction.ASC ? 
-                                   Double.compare(p1.getPrice(), p2.getPrice()) :
-                                   Double.compare(p2.getPrice(), p1.getPrice());
+                            return direction == Sort.Direction.ASC ?
+                                    Double.compare(p1.getPrice(), p2.getPrice()) :
+                                    Double.compare(p2.getPrice(), p1.getPrice());
                         }
                     });
         } else {
             products = productRepository.findAllProducts()
                     .sort((p1, p2) -> {
                         if (property.equals("name")) {
-                            return direction == Sort.Direction.ASC ? 
-                                   p1.getName().compareToIgnoreCase(p2.getName()) :
-                                   p2.getName().compareToIgnoreCase(p1.getName());
+                            return direction == Sort.Direction.ASC ?
+                                    p1.getName().compareToIgnoreCase(p2.getName()) :
+                                    p2.getName().compareToIgnoreCase(p1.getName());
                         } else {
-                            return direction == Sort.Direction.ASC ? 
-                                   Double.compare(p1.getPrice(), p2.getPrice()) :
-                                   Double.compare(p2.getPrice(), p1.getPrice());
+                            return direction == Sort.Direction.ASC ?
+                                    Double.compare(p1.getPrice(), p2.getPrice()) :
+                                    Double.compare(p2.getPrice(), p1.getPrice());
                         }
                     });
         }
 
         return products
-                .skip(page * (long)size)
+                .skip(page * (long) size)
                 .take(size)
                 .collectList()
                 .zipWith(products.count())
@@ -140,8 +140,7 @@ public class ProductServiceImpl implements ProductService {
                 .bind("id", id)
                 .map((row, metadata) -> {
                     Object img = row.get("image");
-                    if (img instanceof ByteBuffer) {
-                        ByteBuffer buffer = (ByteBuffer) img;
+                    if (img instanceof ByteBuffer buffer) {
                         ByteBuffer duplicate = buffer.duplicate();
                         duplicate.rewind();
                         return duplicate;
@@ -151,9 +150,7 @@ public class ProductServiceImpl implements ProductService {
                 .first()
                 .doOnNext(buffer -> {
                     if (buffer != null) {
-                        System.out.println("Retrieved buffer: position=" + buffer.position() +
-                                ", limit=" + buffer.limit() +
-                                ", capacity=" + buffer.capacity());
+                        System.out.println("buffer: " + buffer);
                     }
                 });
     }

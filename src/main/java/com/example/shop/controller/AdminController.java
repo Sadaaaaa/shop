@@ -19,7 +19,7 @@ import reactor.core.publisher.Mono;
 public class AdminController {
     private final ProductService productService;
 
-    @GetMapping
+    @GetMapping(produces = MediaType.TEXT_HTML_VALUE + ";charset=UTF-8")
     public Mono<String> adminPanel(Model model) {
         return productService.getAllProducts()
                 .collectList()
@@ -48,14 +48,17 @@ public class AdminController {
                 
                 return productService.saveProduct(product)
                         .doOnSuccess(p -> log.info("Товар успешно сохранен: {}", p.getId()))
-                        .thenReturn("redirect:/admin");
+                        .thenReturn("redirect:/admin")
+                        .onErrorResume(e -> {
+                            model.addAttribute("error", "Ошибка при сохранении товара: " + e.getMessage());
+                            return Mono.just("admin/panel");
+                        });
             }
             
             return image.content()
                     .collectList()
                     .flatMap(dataBuffers -> {
                         if (dataBuffers.isEmpty()) {
-                            log.warn("Получен пустой список буферов для изображения");
                             Product product = Product.builder()
                                     .name(name)
                                     .description(description)
@@ -67,9 +70,7 @@ public class AdminController {
                         int totalBytes = dataBuffers.stream()
                                 .mapToInt(DataBuffer::readableByteCount)
                                 .sum();
-                        
-                        log.info("Размер изображения: {} байт", totalBytes);
-                        
+
                         byte[] imageBytes = new byte[totalBytes];
                         int offset = 0;
                         for (var buffer : dataBuffers) {
@@ -90,23 +91,12 @@ public class AdminController {
                     })
                     .thenReturn("redirect:/admin")
                     .onErrorResume(e -> {
-                        log.error("Ошибка при загрузке изображения: {}", e.getMessage(), e);
                         model.addAttribute("error", "Ошибка загрузки изображения: " + e.getMessage());
-                        return productService.getAllProducts()
-                                .collectList()
-                                .map(products -> {
-                                    model.addAttribute("products", products);
-                                    return "admin/panel";
-                                });
+                        return Mono.just("admin/panel");
                     });
         } catch (NumberFormatException e) {
             model.addAttribute("error", "Некорректное значение цены: " + price);
-            return productService.getAllProducts()
-                    .collectList()
-                    .map(products -> {
-                        model.addAttribute("products", products);
-                        return "admin/panel";
-                    });
+            return Mono.just("admin/panel");
         }
     }
 

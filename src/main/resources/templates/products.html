@@ -7,7 +7,6 @@
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
-    <!-- Подключаем общий хедер -->
     <div th:replace="~{fragments/header :: header}"></div>
 
     <div class="container main-content">
@@ -112,13 +111,10 @@
             }
         }
 
-        // Функция для обновления счетчика на кнопке "В корзину"
         function updateButtonCounter(button, quantity) {
             if (quantity > 0) {
-                // Проверяем, есть ли уже span с количеством
                 let span = button.querySelector('span');
                 if (!span) {
-                    // Если нет, создаем новый
                     span = document.createElement('span');
                     button.appendChild(document.createTextNode(' '));
                     button.appendChild(span);
@@ -129,7 +125,6 @@
             }
         }
 
-        // Функция для управления видимостью кнопки "Уменьшить"
         function toggleDecreaseButtonVisibility(productId, quantity) {
             const form = document.getElementById(`form-${productId}`);
             if (!form) {
@@ -143,9 +138,7 @@
             }
         }
 
-        // Инициализация начального состояния кнопок "Уменьшить" при загрузке страницы
         document.addEventListener("DOMContentLoaded", function() {
-            // Обновляем счетчик в шапке
             fetch('/cart/counter')
                 .then(response => response.json())
                 .then(count => {
@@ -153,7 +146,6 @@
                 })
                 .catch(error => console.error('Error:', error));
 
-            // Скрываем кнопки "Уменьшить" для товаров с нулевым количеством
             document.querySelectorAll(".cart-form").forEach(function(form) {
                 const productIdInput = form.querySelector('input[name="productId"]');
                 if (!productIdInput) return;
@@ -168,7 +160,6 @@
                 toggleDecreaseButtonVisibility(productId, quantity);
             });
 
-            // Обработчик добавления товара в корзину
             document.querySelectorAll('.cart-form').forEach(function(form) {
                 form.addEventListener("submit", function(event) {
                     event.preventDefault();
@@ -201,7 +192,6 @@
                 });
             });
 
-            // Обработчик уменьшения количества товара
             document.querySelectorAll(".decrease-btn").forEach(function(button) {
                 button.addEventListener("click", function() {
                     const productId = button.getAttribute("data-product-id");
@@ -235,10 +225,8 @@
                         const productItem = cart.items.find(item => item.productId == productId);
                         const quantity = productItem ? productItem.quantity : 0;
 
-                        // Обновляем счетчик на кнопке "В корзину"
                         updateButtonCounter(addButton, quantity);
 
-                        // Обновляем видимость кнопки "Уменьшить"
                         toggleDecreaseButtonVisibility(productId, quantity);
                     })
                     .catch(error => {

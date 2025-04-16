@@ -29,8 +29,4 @@ public class Order {
     
     @Transient
     private List<OrderItem> items;
-    
-    public void setCreatedAt(LocalDateTime dateTime) {
-        this.createdAt = dateTime;
-    }
 }

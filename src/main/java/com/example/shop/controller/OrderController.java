@@ -1,8 +1,5 @@
 package com.example.shop.controller;
 
-import com.example.shop.model.Cart;
-import com.example.shop.model.CartItem;
-import com.example.shop.model.Order;
 import com.example.shop.model.OrderItem;
 import com.example.shop.service.CartService;
 import com.example.shop.service.OrderService;
@@ -10,7 +7,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
@@ -21,7 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderController {
 
-    private static final Long MOCK_USER_ID = 1L;
+    private static final Long MOCK_USER_ID = 1L; // TODO: to_reviewer: я хотел убрать в сервис, но тогда неочевидно, что пользователь должен приходить в контроллер с фронта
     private final OrderService orderService;
     private final CartService cartService;
 

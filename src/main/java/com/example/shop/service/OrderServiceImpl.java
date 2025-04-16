@@ -61,18 +61,18 @@ public class OrderServiceImpl implements OrderService {
         order.setUserId(userId);
         order.setCreatedAt(LocalDateTime.now());
         order.setStatus("PENDING");
-        
+
         double totalAmount = items.stream()
-            .mapToDouble(item -> item.getPrice() * item.getQuantity())
-            .sum();
+                .mapToDouble(item -> item.getPrice() * item.getQuantity())
+                .sum();
         order.setTotalAmount(totalAmount);
 
         return orderRepository.save(order)
-            .flatMap(savedOrder -> {
-                items.forEach(item -> item.setOrderId(savedOrder.getId()));
-                return orderItemRepository.saveAll(items)
-                    .then(Mono.just(savedOrder));
-            });
+                .flatMap(savedOrder -> {
+                    items.forEach(item -> item.setOrderId(savedOrder.getId()));
+                    return orderItemRepository.saveAll(items)
+                            .then(Mono.just(savedOrder));
+                });
     }
 
     @Override

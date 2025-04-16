@@ -10,21 +10,21 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import reactor.core.publisher.Mono;
-import reactor.core.publisher.Flux;
 import org.thymeleaf.spring6.SpringWebFluxTemplateEngine;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import java.nio.ByteBuffer;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
 @WebFluxTest(controllers = ProductController.class)
 @Import({ProductController.class, ProductControllerTest.TestConfig.class})
@@ -56,7 +56,7 @@ class ProductControllerTest {
         testProduct = TestData.createTestProduct();
         testProducts = TestData.createTestProducts(3);
         testCart = TestData.createTestCart();
-        
+
         when(productService.getAllProducts()).thenReturn(Flux.fromIterable(testProducts));
         when(productService.findProductById(anyLong())).thenReturn(Mono.just(testProduct));
         when(productService.findProductImageById(anyLong())).thenReturn(Mono.just(ByteBuffer.allocate(0)));
@@ -66,7 +66,7 @@ class ProductControllerTest {
     @Test
     void showProducts_ShouldReturnProductsPage() {
         when(productService.findProductsByNameOrDescription(isNull(), anyInt(), anyInt(), isNull()))
-            .thenReturn(Mono.just(new PageImpl<>(testProducts)));
+                .thenReturn(Mono.just(new PageImpl<>(testProducts)));
 
         webTestClient.get()
                 .uri("/")
@@ -86,7 +86,7 @@ class ProductControllerTest {
     void showProducts_WithSearchQuery_ShouldReturnFilteredProducts() {
         String keyword = "test";
         when(productService.findProductsByNameOrDescription(eq(keyword), anyInt(), anyInt(), isNull()))
-            .thenReturn(Mono.just(new PageImpl<>(testProducts.subList(0, 1))));
+                .thenReturn(Mono.just(new PageImpl<>(testProducts.subList(0, 1))));
 
         webTestClient.get()
                 .uri(uriBuilder -> uriBuilder

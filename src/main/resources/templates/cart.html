@@ -7,7 +7,6 @@
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
-    <!-- Подключаем общий хедер -->
     <div th:replace="~{fragments/header :: header}"></div>
 
     <div class="container main-content">
@@ -129,8 +128,7 @@
                 itemElement.remove();
                 updateTotal(cart);
                 updateCartUI(cart.items.length);
-                
-                // Если корзина пуста, показываем сообщение
+
                 if (cart.items.length === 0) {
                     const cartItemsContainer = document.querySelector('.cart-items');
                     const cartSummary = document.querySelector('.cart-summary');
@@ -144,7 +142,7 @@
                     if (emptyCartMessage) {
                         emptyCartMessage.style.display = 'block';
                     } else {
-                        // Если сообщение о пустой корзине не существует, создаем его
+
                         const mainContainer = document.querySelector('.main-content');
                         if (mainContainer) {
                             const emptyCartDiv = document.createElement('div');
@@ -171,8 +169,7 @@
                 totalElement.textContent = `${total.toFixed(2)} ₽`;
             }
         }
-        
-        // Обновляем счетчик в шапке при загрузке страницы
+
         document.addEventListener('DOMContentLoaded', function() {
             fetch('/cart/counter')
                 .then(response => response.json())

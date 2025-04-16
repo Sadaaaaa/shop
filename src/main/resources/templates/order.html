@@ -7,7 +7,6 @@
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
-    <!-- Подключаем общий хедер -->
     <div th:replace="~{fragments/header :: header}"></div>
 
     <div class="container mt-4">
@@ -74,7 +73,6 @@
             }
         }
         
-        // Обновляем счетчик в шапке при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
             fetch('/cart/counter')
                 .then(response => response.json())

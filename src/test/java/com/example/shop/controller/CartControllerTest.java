@@ -62,6 +62,7 @@ class CartControllerTest {
         when(cartService.updateItemQuantity(anyLong(), anyLong(), any(Integer.class))).thenReturn(Mono.just(testCart));
         when(cartService.removeItemFromCart(anyLong(), anyLong())).thenReturn(Mono.just(testCart));
         when(cartService.getCartCounter(anyLong())).thenReturn(Mono.just(1));
+        when(cartService.getProductsCounter(anyLong(), anyLong())).thenReturn(Mono.just(1));
         when(productService.findProductById(anyLong())).thenReturn(Mono.just(testProduct));
     }
 

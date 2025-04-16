@@ -1,8 +1,10 @@
 package com.example.shop;
 
-import com.example.shop.model.*;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import com.example.shop.model.Cart;
+import com.example.shop.model.CartItem;
+import com.example.shop.model.Order;
+import com.example.shop.model.OrderItem;
+import com.example.shop.model.Product;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,10 +32,6 @@ public class TestData {
         cart.setUserId(TEST_USER_ID);
         cart.setItems(new ArrayList<>());
         return cart;
-    }
-
-    public static CartItem createTestCartItem() {
-        return createTestCartItem(createTestProduct());
     }
 
     public static CartItem createTestCartItem(Product product) {
@@ -67,25 +65,6 @@ public class TestData {
         return item;
     }
 
-    public static Mono<Product> createTestProductMono() {
-        return Mono.just(createTestProduct());
-    }
-
-    public static Mono<Cart> createTestCartMono() {
-        return Mono.just(createTestCart());
-    }
-
-    public static Mono<Order> createTestOrderMono() {
-        return Mono.just(createTestOrder());
-    }
-
-    public static Flux<Product> createTestProductsFlux() {
-        return Flux.just(createTestProduct());
-    }
-
-    public static Flux<Order> createTestOrdersFlux() {
-        return Flux.just(createTestOrder());
-    }
 
     public static List<Product> createTestProducts(int count) {
         List<Product> products = new ArrayList<>();

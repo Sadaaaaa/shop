@@ -7,5 +7,4 @@ import reactor.core.publisher.Mono;
 
 public interface OrderItemRepository extends R2dbcRepository<OrderItem, Long> {
     Flux<OrderItem> findByOrderId(Long orderId);
-    Mono<Void> deleteByOrderId(Long orderId);
-} 
+}
