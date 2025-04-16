@@ -147,11 +147,6 @@ public class ProductServiceImpl implements ProductService {
                     }
                     return null;
                 })
-                .first()
-                .doOnNext(buffer -> {
-                    if (buffer != null) {
-                        System.out.println("buffer: " + buffer);
-                    }
-                });
+                .first();
     }
 }

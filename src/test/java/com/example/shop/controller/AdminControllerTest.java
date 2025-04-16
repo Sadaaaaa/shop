@@ -17,6 +17,7 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.thymeleaf.spring6.SpringWebFluxTemplateEngine;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.List;
 
@@ -103,5 +104,24 @@ class AdminControllerTest {
                 .expectHeader().valueEquals("Location", "/admin");
 
         verify(productService).deleteProduct(1L);
+    }
+
+    @Test
+    void deleteProduct_ProductInOrder_ShouldReturnError() {
+        when(productService.deleteProduct(1L))
+                .thenReturn(Mono.error(new DataIntegrityViolationException(
+                        "update or delete on table \"products\" violates foreign key constraint \"order_items_product_id_fkey\" on table \"order_items\"")));
+        when(productService.getAllProducts()).thenReturn(Flux.fromIterable(testProducts));
+
+        webTestClient.post()
+                .uri("/admin/products/delete/1")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.TEXT_HTML_VALUE)
+                .expectBody(String.class)
+                .value(body -> body.contains("Невозможно удалить товар, так как он используется в заказах"));
+
+        verify(productService).deleteProduct(1L);
+        verify(productService).getAllProducts();
     }
 } 

@@ -5,6 +5,7 @@ import com.example.shop.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
@@ -100,10 +101,24 @@ public class AdminController {
         }
     }
 
-    @PostMapping("/products/delete/{id}")
-    public Mono<String> deleteProduct(@PathVariable Long id) {
+    @PostMapping(value = "/products/delete/{id}", produces = MediaType.TEXT_HTML_VALUE + ";charset=UTF-8")
+    public Mono<String> deleteProduct(@PathVariable Long id, Model model) {
         return productService.deleteProduct(id)
                 .doOnSuccess(v -> log.info("Товар успешно удален: {}", id))
-                .thenReturn("redirect:/admin");
+                .thenReturn("redirect:/admin")
+                .onErrorResume(e -> {
+                    if (e instanceof DataIntegrityViolationException) {
+                        model.addAttribute("error", "Невозможно удалить товар, так как он используется в заказах");
+                    } else {
+                        model.addAttribute("error", "Ошибка при удалении товара: " + e.getMessage());
+                    }
+
+                    return productService.getAllProducts()
+                            .collectList()
+                            .map(products -> {
+                                model.addAttribute("products", products);
+                                return "admin/panel";
+                            });
+                });
     }
 } 
