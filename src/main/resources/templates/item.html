@@ -45,12 +45,12 @@
                                     <button type="button" 
                                             class="btn btn-outline-danger decrease-btn" 
                                             th:attr="data-product-id=${product.id}"
-                                            th:style="${cart != null and cart.items != null and cart.items.?[product.id == __${product.id}__].size() > 0 ? '' : 'display: none;'}">
+                                            th:style="${cart != null and cart.items != null and cart.items.?[productId == __${product.id}__].size() > 0 ? '' : 'display: none;'}">
                                         -
                                     </button>
                                     
                                     <span class="quantity-display" th:id="'quantity-' + ${product.id}">
-                                        <span th:with="productInCart=${cart != null and cart.items != null ? cart.items.?[product.id == __${product.id}__] : null}"
+                                        <span th:with="productInCart=${cart != null and cart.items != null ? cart.items.?[productId == __${product.id}__] : null}"
                                               th:text="${productInCart != null and !productInCart.isEmpty() ? productInCart[0].quantity : 0}"></span>
                                     </span>
                                     
@@ -76,6 +76,20 @@
             }
         }
         
+        // Функция для обновления счетчика количества
+        function updateQuantityUI(productId, quantity) {
+            const quantityElement = document.getElementById(`quantity-${productId}`);
+            if (quantityElement) {
+                quantityElement.querySelector('span').textContent = quantity;
+            }
+            
+            // Обновляем видимость кнопки уменьшения
+            const decreaseBtn = document.querySelector(`.decrease-btn[data-product-id="${productId}"]`);
+            if (decreaseBtn) {
+                decreaseBtn.style.display = quantity > 0 ? 'inline-block' : 'none';
+            }
+        }
+        
         // Обновляем счетчик в шапке при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
             fetch('/cart/counter')
@@ -84,10 +98,7 @@
                     updateCartUI(count);
                 })
                 .catch(error => console.error('Error:', error));
-        });
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
+                
             // Обработка добавления в корзину
             const cartForm = document.querySelector('.cart-form');
             if (cartForm) {
@@ -110,11 +121,16 @@
                             throw new Error('Ошибка при добавлении товара в корзину');
                         }
                         return response.json();
-                    }).then(() => {
+                    }).then(cart => {
                         // Обновляем счетчик корзины
-                        updateCartCount();
-                        // Перезагружаем страницу для обновления количества товаров
-                        window.location.reload();
+                        updateCartUI(cart.items.length);
+                        
+                        // Находим этот товар в корзине
+                        const productItem = cart.items.find(item => item.productId == productId);
+                        const quantity = productItem ? productItem.quantity : 0;
+                        
+                        // Обновляем отображение количества
+                        updateQuantityUI(productId, quantity);
                     }).catch(error => {
                         console.error('Ошибка:', error);
                     });
@@ -126,12 +142,6 @@
             if (decreaseButton) {
                 // Получаем productId из атрибута data-product-id
                 const productId = decreaseButton.getAttribute('data-product-id');
-                
-                // Проверяем наличие товара в корзине для показа кнопки уменьшения
-                const quantityElement = document.querySelector('.quantity-display span');
-                const quantity = quantityElement ? parseInt(quantityElement.textContent || '0') : 0;
-                
-                decreaseButton.style.display = quantity > 0 ? 'inline-block' : 'none';
                 
                 decreaseButton.addEventListener('click', function() {
                     if (!productId) {
@@ -146,11 +156,16 @@
                             throw new Error('Ошибка при уменьшении количества товара');
                         }
                         return response.json();
-                    }).then(() => {
+                    }).then(cart => {
                         // Обновляем счетчик корзины
-                        updateCartCount();
-                        // Перезагружаем страницу для обновления количества товаров
-                        window.location.reload();
+                        updateCartUI(cart.items.length);
+                        
+                        // Находим этот товар в корзине
+                        const productItem = cart.items.find(item => item.productId == productId);
+                        const quantity = productItem ? productItem.quantity : 0;
+                        
+                        // Обновляем отображение количества
+                        updateQuantityUI(productId, quantity);
                     }).catch(error => {
                         console.error('Ошибка:', error);
                     });

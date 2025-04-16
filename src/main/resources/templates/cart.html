@@ -132,15 +132,30 @@
                 
                 // Если корзина пуста, показываем сообщение
                 if (cart.items.length === 0) {
-                    const cartContainer = document.querySelector('.cart-items');
-                    const emptyCarts = document.querySelector('.empty-cart');
+                    const cartItemsContainer = document.querySelector('.cart-items');
+                    const cartSummary = document.querySelector('.cart-summary');
+                    const emptyCartMessage = document.querySelector('.empty-cart');
                     
-                    if (cartContainer) {
-                        cartContainer.innerHTML = '';
+                    if (cartItemsContainer && cartSummary) {
+                        cartItemsContainer.style.display = 'none';
+                        cartSummary.style.display = 'none';
                     }
                     
-                    if (emptyCarts) {
-                        emptyCarts.style.display = 'block';
+                    if (emptyCartMessage) {
+                        emptyCartMessage.style.display = 'block';
+                    } else {
+                        // Если сообщение о пустой корзине не существует, создаем его
+                        const mainContainer = document.querySelector('.main-content');
+                        if (mainContainer) {
+                            const emptyCartDiv = document.createElement('div');
+                            emptyCartDiv.className = 'empty-cart';
+                            
+                            const message = document.createElement('p');
+                            message.textContent = 'Ваша корзина пуста';
+                            
+                            emptyCartDiv.appendChild(message);
+                            mainContainer.appendChild(emptyCartDiv);
+                        }
                     }
                 }
             })
@@ -153,7 +168,7 @@
             const totalElement = document.querySelector('.cart-total span');
             if (totalElement && cart && cart.items) {
                 const total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-                totalElement.textContent = total + ' ₽';
+                totalElement.textContent = `${total.toFixed(2)} ₽`;
             }
         }
         

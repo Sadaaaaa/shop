@@ -107,11 +107,11 @@ public class CartController {
 
     @PostMapping("/remove")
     @ResponseBody
-    public Mono<Void> removeFromCart(@RequestParam(required = true) Long productId) {
+    public Mono<Cart> removeFromCart(@RequestParam(required = true) Long productId) {
         if (productId == null) {
             return Mono.error(new IllegalArgumentException("Product ID is required"));
         }
-        return cartService.removeItemFromCart(MOCK_USER, productId).then();
+        return cartService.removeItemFromCart(MOCK_USER, productId);
     }
 
     @PostMapping("/update")
