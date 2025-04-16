@@ -134,10 +134,6 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.findById(id);
     }
 
-//    @Override
-//    public Mono<ByteBuffer> findProductImageById(Long id) {
-//        return productRepository.findImageById(id);
-//    }
     @Override
     public Mono<ByteBuffer> findProductImageById(Long id) {
         return databaseClient.sql("SELECT image FROM products WHERE id = :id")
@@ -146,7 +142,6 @@ public class ProductServiceImpl implements ProductService {
                     Object img = row.get("image");
                     if (img instanceof ByteBuffer) {
                         ByteBuffer buffer = (ByteBuffer) img;
-                        // Создаем копию буфера и сбрасываем позицию
                         ByteBuffer duplicate = buffer.duplicate();
                         duplicate.rewind();
                         return duplicate;

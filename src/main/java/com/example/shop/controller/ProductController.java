@@ -62,11 +62,9 @@ public class ProductController {
         return productService.findProductImageById(id)
                 .filter(buffer -> buffer != null)
                 .map(buffer -> {
-                    // Убедимся, что мы работаем с дубликатом буфера и сбрасываем позицию
                     ByteBuffer duplicate = buffer.duplicate();
-                    duplicate.rewind(); // Сбрасываем позицию на начало
+                    duplicate.rewind();
 
-                    // Теперь создаем массив байтов и заполняем его
                     byte[] bytes = new byte[duplicate.remaining()];
                     duplicate.get(bytes);
 
@@ -76,7 +74,6 @@ public class ProductController {
                 })
                 .defaultIfEmpty(ResponseEntity.notFound().build())
                 .onErrorResume(e -> {
-                    // Логируем ошибку и возвращаем статус 500
                     System.err.println("Error retrieving image: " + e.getMessage());
                     e.printStackTrace();
                     return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());

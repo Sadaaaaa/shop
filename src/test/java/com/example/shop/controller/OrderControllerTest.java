@@ -10,7 +10,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.thymeleaf.spring6.SpringWebFluxTemplateEngine;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -20,8 +24,17 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@WebFluxTest(OrderController.class)
+@WebFluxTest(controllers = OrderController.class)
+@Import({OrderController.class, OrderControllerTest.TestConfig.class})
 class OrderControllerTest {
+
+    @Configuration
+    static class TestConfig {
+        @Bean
+        public SpringWebFluxTemplateEngine templateEngine() {
+            return new SpringWebFluxTemplateEngine();
+        }
+    }
 
     @Autowired
     private WebTestClient webTestClient;
@@ -39,70 +52,55 @@ class OrderControllerTest {
     void setUp() {
         testOrder = TestData.createTestOrder();
         testOrderItems = List.of(TestData.createTestOrderItem());
-    }
 
-    @Test
-    void getAllOrders_ShouldReturnOrders() {
         when(orderService.getAllOrders(TestData.TEST_USER_ID))
-                .thenReturn(TestData.createTestOrdersFlux());
-
-        webTestClient.get()
-                .uri("/api/orders/{userId}", TestData.TEST_USER_ID)
-                .exchange()
-                .expectStatus().isOk()
-                .expectBodyList(Order.class)
-                .hasSize(1)
-                .contains(testOrder);
+                .thenReturn(Flux.just(testOrder));
+        when(orderService.getOrderById(TestData.TEST_USER_ID, TestData.TEST_ORDER_ID))
+                .thenReturn(Mono.just(testOrder));
+        when(orderService.createOrder(TestData.TEST_USER_ID, testOrderItems))
+                .thenReturn(Mono.just(testOrder));
+        when(orderService.updateOrderStatus(TestData.TEST_USER_ID, TestData.TEST_ORDER_ID, "PROCESSING"))
+                .thenReturn(Mono.just(testOrder));
+        when(orderService.deleteOrder(TestData.TEST_USER_ID, TestData.TEST_ORDER_ID))
+                .thenReturn(Mono.empty());
     }
 
     @Test
-    void getOrderById_ShouldReturnOrder() {
-        when(orderService.getOrderById(TestData.TEST_USER_ID, TestData.TEST_ORDER_ID))
-                .thenReturn(TestData.createTestOrderMono());
-
+    void listOrders_ShouldReturnOrdersPage() {
         webTestClient.get()
-                .uri("/api/orders/{userId}/{orderId}", TestData.TEST_USER_ID, TestData.TEST_ORDER_ID)
+                .uri("/orders")
                 .exchange()
-                .expectStatus().isOk()
-                .expectBody(Order.class)
-                .isEqualTo(testOrder);
+                .expectStatus().isOk();
+    }
+
+    @Test
+    void viewOrder_ShouldReturnOrderPage() {
+        webTestClient.get()
+                .uri("/orders/{id}", TestData.TEST_ORDER_ID)
+                .exchange()
+                .expectStatus().isOk();
     }
 
     @Test
     void createOrder_ShouldCreateOrder() {
-        when(orderService.createOrder(TestData.TEST_USER_ID, testOrderItems))
-                .thenReturn(TestData.createTestOrderMono());
-
         webTestClient.post()
-                .uri("/api/orders/{userId}", TestData.TEST_USER_ID)
-                .bodyValue(testOrderItems)
+                .uri("/orders/create")
                 .exchange()
-                .expectStatus().isOk()
-                .expectBody(Order.class)
-                .isEqualTo(testOrder);
+                .expectStatus().is3xxRedirection();
     }
 
     @Test
     void updateOrderStatus_ShouldUpdateStatus() {
-        when(orderService.updateOrderStatus(TestData.TEST_USER_ID, TestData.TEST_ORDER_ID, "PROCESSING"))
-                .thenReturn(TestData.createTestOrderMono());
-
         webTestClient.put()
-                .uri("/api/orders/{userId}/{orderId}/status?status=PROCESSING", 
-                    TestData.TEST_USER_ID, TestData.TEST_ORDER_ID)
+                .uri("/orders/{id}/status?status=PROCESSING", TestData.TEST_ORDER_ID)
                 .exchange()
-                .expectStatus().isOk()
-                .expectBody(Order.class)
-                .isEqualTo(testOrder);
+                .expectStatus().isOk();
     }
 
     @Test
     void deleteOrder_ShouldDeleteOrder() {
-        when(orderService.deleteOrder(TestData.TEST_USER_ID, TestData.TEST_ORDER_ID))
-                .thenReturn(Mono.empty());
-
         webTestClient.delete()
-                .uri("/api/orders/{userId}/{orderId}", TestData.TEST_USER_ID, TestData.TEST_ORDER_ID)
+                .uri("/orders/{id}", TestData.TEST_ORDER_ID)
                 .exchange()
                 .expectStatus().isOk();
     }

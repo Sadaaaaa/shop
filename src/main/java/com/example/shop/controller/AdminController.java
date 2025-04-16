@@ -4,6 +4,7 @@ import com.example.shop.model.Product;
 import com.example.shop.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
@@ -35,13 +36,10 @@ public class AdminController {
                                  @RequestPart("price") String price,
                                  @RequestPart(value = "image", required = false) FilePart image,
                                  Model model) {
-        log.info("Добавление продукта: {}, цена: {}", name, price);
-        
         try {
             double priceValue = Double.parseDouble(price);
             
             if (image == null || image.filename().isEmpty()) {
-                log.info("Изображение не предоставлено, сохраняем товар без изображения");
                 Product product = Product.builder()
                         .name(name)
                         .description(description)
@@ -53,7 +51,6 @@ public class AdminController {
                         .thenReturn("redirect:/admin");
             }
             
-            log.info("Начинаем загрузку изображения: {}", image.filename());
             return image.content()
                     .collectList()
                     .flatMap(dataBuffers -> {
@@ -68,7 +65,7 @@ public class AdminController {
                         }
                         
                         int totalBytes = dataBuffers.stream()
-                                .mapToInt(d -> d.readableByteCount())
+                                .mapToInt(DataBuffer::readableByteCount)
                                 .sum();
                         
                         log.info("Размер изображения: {} байт", totalBytes);
@@ -103,7 +100,6 @@ public class AdminController {
                                 });
                     });
         } catch (NumberFormatException e) {
-            log.error("Некорректное значение цены: {}", price, e);
             model.addAttribute("error", "Некорректное значение цены: " + price);
             return productService.getAllProducts()
                     .collectList()
@@ -116,7 +112,6 @@ public class AdminController {
 
     @PostMapping("/products/delete/{id}")
     public Mono<String> deleteProduct(@PathVariable Long id) {
-        log.info("Удаление товара с ID: {}", id);
         return productService.deleteProduct(id)
                 .doOnSuccess(v -> log.info("Товар успешно удален: {}", id))
                 .thenReturn("redirect:/admin");

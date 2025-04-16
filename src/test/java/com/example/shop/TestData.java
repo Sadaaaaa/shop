@@ -28,16 +28,22 @@ public class TestData {
         Cart cart = new Cart();
         cart.setId(TEST_CART_ID);
         cart.setUserId(TEST_USER_ID);
+        cart.setItems(new ArrayList<>());
         return cart;
     }
 
     public static CartItem createTestCartItem() {
+        return createTestCartItem(createTestProduct());
+    }
+
+    public static CartItem createTestCartItem(Product product) {
         CartItem item = new CartItem();
         item.setId(1L);
         item.setCartId(TEST_CART_ID);
-        item.setProductId(TEST_PRODUCT_ID);
+        item.setProductId(product.getId());
         item.setQuantity(1);
-        item.setPrice(TEST_PRICE);
+        item.setPrice(product.getPrice());
+        item.setProduct(product);
         return item;
     }
 

@@ -60,17 +60,14 @@ public class CartController {
         
         return cartService.getCart(MOCK_USER)
                 .flatMap(cart -> {
-                    // Проверяем, есть ли товар уже в корзине
                     CartItem existingItem = cart.getItems().stream()
                             .filter(item -> item.getProductId().equals(productId))
                             .findFirst()
                             .orElse(null);
                     
                     if (existingItem != null) {
-                        // Если товар уже есть, увеличиваем количество
                         return cartService.updateItemQuantity(MOCK_USER, productId, existingItem.getQuantity() + 1);
                     } else {
-                        // Если товара нет, добавляем новый
                         return productService.findProductById(productId)
                                 .flatMap(product -> {
                                     CartItem item = new CartItem();

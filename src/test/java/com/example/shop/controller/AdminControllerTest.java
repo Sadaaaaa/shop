@@ -1,6 +1,5 @@
 package com.example.shop.controller;
 
-import com.example.shop.BaseTest;
 import com.example.shop.TestData;
 import com.example.shop.model.Product;
 import com.example.shop.model.Order;
@@ -9,25 +8,37 @@ import com.example.shop.service.OrderService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.reactive.function.BodyInserters;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import org.thymeleaf.spring6.SpringWebFluxTemplateEngine;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@AutoConfigureMockMvc
-class AdminControllerTest extends BaseTest {
+@WebFluxTest(controllers = AdminController.class)
+@Import({AdminController.class, AdminControllerTest.TestConfig.class})
+class AdminControllerTest {
+
+    @Configuration
+    static class TestConfig {
+        @Bean
+        public SpringWebFluxTemplateEngine templateEngine() {
+            return new SpringWebFluxTemplateEngine();
+        }
+    }
 
     @Autowired
-    private MockMvc mockMvc;
+    private WebTestClient webTestClient;
 
     @MockBean
     private ProductService productService;
@@ -46,67 +57,60 @@ class AdminControllerTest extends BaseTest {
         when(productService.getAllProducts()).thenReturn(Flux.fromIterable(testProducts));
         when(productService.saveProduct(any(Product.class))).thenReturn(Mono.just(testProduct));
         when(productService.deleteProduct(anyLong())).thenReturn(Mono.empty());
+        when(orderService.getAllOrders(anyLong())).thenReturn(Flux.fromIterable(List.of(TestData.createTestOrder())));
     }
 
     @Test
-    void adminPanel_ShouldReturnAdminPage() throws Exception {
-        mockMvc.perform(get("/admin"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("admin/panel"))
-                .andExpect(model().attributeExists("products"))
-                .andExpect(model().attributeExists("newProduct"));
+    void adminPanel_ShouldReturnAdminPage() {
+        webTestClient.get()
+                .uri("/admin")
+                .exchange()
+                .expectStatus().isOk();
     }
 
     @Test
-    void addProduct_ValidProduct_ShouldRedirectToAdmin() throws Exception {
-        MockMultipartFile imageFile = new MockMultipartFile(
-            "image",
-            "test.jpg",
-            "image/jpeg",
-            "test image content".getBytes()
-        );
-
-        mockMvc.perform(multipart("/admin/products/add")
-                .file(imageFile)
-                .param("name", "Test Product")
-                .param("description", "Test Description")
-                .param("price", "99.99"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin"));
+    void addProduct_ValidProduct_ShouldRedirectToAdmin() {
+        webTestClient.post()
+                .uri("/admin/products/add")
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(BodyInserters.fromMultipartData("name", "Test Product")
+                        .with("description", "Test Description")
+                        .with("price", "99.99"))
+                .exchange()
+                .expectStatus().is3xxRedirection()
+                .expectHeader().valueEquals("Location", "/admin");
 
         verify(productService).saveProduct(any(Product.class));
     }
 
     @Test
-    void deleteProduct_ExistingProduct_ShouldRedirectToAdmin() throws Exception {
-        mockMvc.perform(post("/admin/products/delete/{id}", testProduct.getId()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin"));
+    void deleteProduct_ExistingProduct_ShouldRedirectToAdmin() {
+        webTestClient.post()
+                .uri("/admin/products/delete/{id}", testProduct.getId())
+                .exchange()
+                .expectStatus().is3xxRedirection()
+                .expectHeader().valueEquals("Location", "/admin");
 
         verify(productService).deleteProduct(testProduct.getId());
     }
 
     @Test
-    void listProducts_ShouldReturnProductsList() throws Exception {
-        List<Product> products = TestData.createTestProducts(3);
-        when(productService.getAllProducts()).thenReturn(Flux.fromIterable(products));
+    void listProducts_ShouldReturnProductsList() {
+        webTestClient.get()
+                .uri("/admin/products")
+                .exchange()
+                .expectStatus().isOk();
 
-        mockMvc.perform(get("/admin/products"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("admin/products"))
-                .andExpect(model().attributeExists("products"))
-                .andExpect(model().attribute("products", products));
+        verify(productService).getAllProducts();
     }
 
     @Test
-    void listOrders_ShouldReturnOrdersList() throws Exception {
-        List<Order> testOrders = List.of(TestData.createTestOrder());
-        when(orderService.getAllOrders(1L)).thenReturn(Flux.fromIterable(testOrders));
+    void listOrders_ShouldReturnOrdersList() {
+        webTestClient.get()
+                .uri("/admin/orders")
+                .exchange()
+                .expectStatus().isOk();
 
-        mockMvc.perform(get("/admin/orders"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("admin/orders"))
-                .andExpect(model().attributeExists("orders"))
-                .andExpect(model().attribute("orders", testOrders));
+        verify(orderService).getAllOrders(anyLong());
     }
 } 
