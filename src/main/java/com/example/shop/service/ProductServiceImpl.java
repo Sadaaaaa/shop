@@ -63,8 +63,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Mono<Page<Product>> findProductsByNameOrDescription(String search, int page, int size, String sort) {
-        Sort.Direction direction = Sort.Direction.ASC;
-        String property = "name";
+        final Sort.Direction direction;
+        final String property;
 
         if (sort != null) {
             switch (sort) {
@@ -80,20 +80,52 @@ public class ProductServiceImpl implements ProductService {
                     direction = Sort.Direction.DESC;
                     property = "price";
                 }
+                default -> {
+                    direction = Sort.Direction.ASC;
+                    property = "name";
+                }
             }
+        } else {
+            direction = Sort.Direction.ASC;
+            property = "name";
         }
 
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, property));
 
         Flux<Product> products;
         if (search != null && !search.isEmpty()) {
-            products = productRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(search, search);
+            products = productRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(search, search)
+                    .sort((p1, p2) -> {
+                        if (property.equals("name")) {
+                            return direction == Sort.Direction.ASC ? 
+                                   p1.getName().compareToIgnoreCase(p2.getName()) :
+                                   p2.getName().compareToIgnoreCase(p1.getName());
+                        } else {
+                            return direction == Sort.Direction.ASC ? 
+                                   Double.compare(p1.getPrice(), p2.getPrice()) :
+                                   Double.compare(p2.getPrice(), p1.getPrice());
+                        }
+                    });
         } else {
-            products = productRepository.findAllProducts();
+            products = productRepository.findAllProducts()
+                    .sort((p1, p2) -> {
+                        if (property.equals("name")) {
+                            return direction == Sort.Direction.ASC ? 
+                                   p1.getName().compareToIgnoreCase(p2.getName()) :
+                                   p2.getName().compareToIgnoreCase(p1.getName());
+                        } else {
+                            return direction == Sort.Direction.ASC ? 
+                                   Double.compare(p1.getPrice(), p2.getPrice()) :
+                                   Double.compare(p2.getPrice(), p1.getPrice());
+                        }
+                    });
         }
 
-        return products.collectList()
-                .zipWith(productRepository.count())
+        return products
+                .skip(page * (long)size)
+                .take(size)
+                .collectList()
+                .zipWith(products.count())
                 .map(tuple -> new PageImpl<>(tuple.getT1(), pageRequest, tuple.getT2()));
     }
 
