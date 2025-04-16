@@ -2,6 +2,7 @@ package com.example.shop.controller;
 
 import com.example.shop.TestData;
 import com.example.shop.model.Cart;
+import com.example.shop.model.CartItem;
 import com.example.shop.model.Product;
 import com.example.shop.service.CartService;
 import com.example.shop.service.ProductService;
@@ -19,6 +20,7 @@ import org.springframework.context.annotation.Configuration;
 import reactor.core.publisher.Mono;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,18 +48,21 @@ class CartControllerTest {
 
     private Product testProduct;
     private Cart testCart;
+    private CartItem testCartItem;
 
     @BeforeEach
     void setUp() {
         testProduct = TestData.createTestProduct();
         testCart = TestData.createTestCart();
+        testCartItem = TestData.createTestCartItem(testProduct);
+        testCart.getItems().add(testCartItem);
 
-        when(cartService.getCart(any())).thenReturn(Mono.just(testCart));
-        when(cartService.addItemToCart(any(), any())).thenReturn(Mono.just(testCart));
-        when(cartService.updateItemQuantity(any(), any(), any())).thenReturn(Mono.just(testCart));
-        when(cartService.removeItemFromCart(any(), any())).thenReturn(Mono.just(testCart));
-        when(cartService.getCartCounter(any())).thenReturn(Mono.just(1));
-        when(productService.findProductById(any())).thenReturn(Mono.just(testProduct));
+        when(cartService.getCart(anyLong())).thenReturn(Mono.just(testCart));
+        when(cartService.addItemToCart(anyLong(), any(CartItem.class))).thenReturn(Mono.just(testCart));
+        when(cartService.updateItemQuantity(anyLong(), anyLong(), any(Integer.class))).thenReturn(Mono.just(testCart));
+        when(cartService.removeItemFromCart(anyLong(), anyLong())).thenReturn(Mono.just(testCart));
+        when(cartService.getCartCounter(anyLong())).thenReturn(Mono.just(1));
+        when(productService.findProductById(anyLong())).thenReturn(Mono.just(testProduct));
     }
 
     @Test
@@ -84,8 +89,8 @@ class CartControllerTest {
                 .uri("/cart/counter")
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(String.class)
-                .isEqualTo("1");
+                .expectBody(Integer.class)
+                .isEqualTo(1);
     }
 
     @Test
