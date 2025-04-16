@@ -6,14 +6,17 @@ services:
     image: shop:latest
     container_name: shop_app
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://shop_db:5432/shop_db
+      SPRING_R2DBC_URL: r2dbc:postgresql://db:5432/shop_db
+      SPRING_R2DBC_USERNAME: postgres
+      SPRING_R2DBC_PASSWORD: postgres
     command: java -jar target/shop-0.0.1-SNAPSHOT.jar
     ports:
       - "8080:8080"
     networks:
       - shop_network
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: postgres:17
@@ -22,13 +25,17 @@ services:
       POSTGRES_DB: shop_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     networks:
       - shop_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 networks:
   shop_network:

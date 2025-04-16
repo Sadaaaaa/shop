@@ -1,12 +1,9 @@
 package com.example.shop.controller;
 
-import com.example.shop.model.Cart;
-import com.example.shop.model.CartItem;
-import com.example.shop.model.Order;
 import com.example.shop.model.OrderItem;
 import com.example.shop.service.CartService;
 import com.example.shop.service.OrderService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,54 +13,63 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Controller
 @RequestMapping("/orders")
+@RequiredArgsConstructor
 public class OrderController {
-    @Autowired
-    private OrderService orderService;
 
-    @Autowired
-    private CartService cartService;
-
-    private static final Long MOCK_USER_ID = 1L;
+    private static final Long MOCK_USER_ID = 1L; // TODO: to_reviewer: я хотел убрать в сервис, но тогда неочевидно, что пользователь должен приходить в контроллер с фронта
+    private final OrderService orderService;
+    private final CartService cartService;
 
     @GetMapping
-    public String listOrders(Model model) {
-        model.addAttribute("orders", orderService.getAllOrders());
-        return "orders";
+    public Mono<String> listOrders(Model model) {
+        return orderService.getAllOrders(MOCK_USER_ID)
+                .collectList()
+                .map(orders -> {
+                    model.addAttribute("orders", orders);
+                    return "orders";
+                });
     }
 
     @GetMapping("/{id}")
-    public String viewOrder(@PathVariable Long id, Model model) {
-        model.addAttribute("order", orderService.getOrderById(id));
-        return "order";
+    public Mono<String> viewOrder(@PathVariable Long id, Model model) {
+        return orderService.getOrderById(MOCK_USER_ID, id)
+                .map(order -> {
+                    model.addAttribute("order", order);
+                    return "order";
+                })
+                .switchIfEmpty(Mono.error(new RuntimeException("Order not found")));
     }
 
     @PostMapping("/create")
-    public String createOrder() {
-        Cart cart = cartService.getCart(MOCK_USER_ID);
-        List<OrderItem> orderItems = new ArrayList<>();
+    public Mono<String> createOrder() {
+        return cartService.getCart(MOCK_USER_ID)
+                .flatMap(cart -> {
+                    List<OrderItem> orderItems = new ArrayList<>();
+                    cart.getItems().forEach(cartItem -> {
+                        OrderItem orderItem = new OrderItem();
+                        orderItem.setProductId(cartItem.getProductId());
+                        orderItem.setQuantity(cartItem.getQuantity());
+                        orderItem.setPrice(cartItem.getPrice());
+                        orderItems.add(orderItem);
+                    });
 
-        List<CartItem> cartItems = new ArrayList<>(cart.getItems());
-
-        cartItems.forEach(cartItem -> {
-            OrderItem orderItem = new OrderItem();
-            orderItem.setProduct(cartItem.getProduct());
-            orderItem.setQuantity(cartItem.getQuantity());
-            orderItem.setPrice(cartItem.getProduct().getPrice());
-            orderItems.add(orderItem);
-        });
-
-        Order order = orderService.createOrder(MOCK_USER_ID, orderItems);
-
-        cartItems.forEach(item ->
-                cartService.removeFromCart(MOCK_USER_ID, item.getProduct().getId())
-        );
-        return "redirect:/orders/" + order.getId();
+                    return orderService.createOrder(MOCK_USER_ID, orderItems)
+                            .flatMap(order -> {
+                                List<Mono<Void>> removeOperations = new ArrayList<>();
+                                cart.getItems().forEach(item ->
+                                        removeOperations.add(cartService.removeItemFromCart(MOCK_USER_ID, item.getProductId()).then())
+                                );
+                                return Mono.when(removeOperations)
+                                        .thenReturn("redirect:/orders/" + order.getId());
+                            });
+                });
     }
 
     @ExceptionHandler(RuntimeException.class)

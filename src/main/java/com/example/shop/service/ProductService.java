@@ -2,23 +2,29 @@ package com.example.shop.service;
 
 import com.example.shop.model.Product;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.List;
+import java.nio.ByteBuffer;
 
 public interface ProductService {
+    Flux<Product> getAllProducts();
 
-    Page<Product> findAllProducts(Pageable pageable);
+    Mono<Product> getProductById(Long id);
 
-    Page<Product> findProductsByNameOrDescription(String query, Pageable pageable);
+    Flux<Product> searchProducts(String name, String description);
 
-    Page<Product> findProductsByName(String name, Pageable pageable);
+    Flux<Product> filterProductsByPrice(Double minPrice, Double maxPrice);
 
-    Product findProductById(Long id);
+    Flux<Product> findWithFilters(String name, Double minPrice, Double maxPrice);
 
-    Product saveProduct(Product product);
+    Mono<Product> saveProduct(Product product);
 
-    List<Product> getAllProducts();
+    Mono<Void> deleteProduct(Long id);
 
-    void deleteProduct(Long id);
+    Mono<Page<Product>> findProductsByNameOrDescription(String search, int page, int size, String sort);
+
+    Mono<Product> findProductById(Long id);
+
+    Mono<ByteBuffer> findProductImageById(Long id);
 }

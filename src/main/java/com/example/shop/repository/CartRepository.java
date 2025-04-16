@@ -1,15 +1,9 @@
 package com.example.shop.repository;
 
 import com.example.shop.model.Cart;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import reactor.core.publisher.Mono;
 
-import java.util.Optional;
-
-@Repository
-public interface CartRepository extends JpaRepository<Cart, Long> {
-
-    @Query("SELECT c FROM Cart c WHERE c.userId = :userId")
-    Optional<Cart> findCartByUserId(Long userId);
+public interface CartRepository extends R2dbcRepository<Cart, Long> {
+    Mono<Cart> findByUserId(Long userId);
 }

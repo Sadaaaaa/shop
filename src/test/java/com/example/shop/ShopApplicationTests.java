@@ -34,5 +34,4 @@ class ShopApplicationTests {
         assertNotNull(orderController);
         assertNotNull(adminController);
     }
-
 }

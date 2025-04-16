@@ -1,34 +1,32 @@
 package com.example.shop.model;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
 import lombok.Data;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@Entity
-@Table(name = "orders")
+@Table("orders")
 public class Order {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "user_id", nullable = false)
+    
+    @Column("user_id")
     private Long userId;
-
-    private LocalDateTime orderDate;
-
-    @Column(name = "total_price")
-    private Double totalAmount;
-
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
-    private List<OrderItem> orderItems;
+    
+    @Column("total_amount")
+    private double totalAmount;
+    
+    @Column("created_at")
+    private LocalDateTime createdAt;
+    
+    @Column("status")
+    private String status;
+    
+    @Transient
+    private List<OrderItem> items;
 }

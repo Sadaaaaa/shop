@@ -1,100 +1,136 @@
 package com.example.shop.controller;
 
-import com.example.shop.BaseTest;
 import com.example.shop.TestData;
 import com.example.shop.model.Cart;
+import com.example.shop.model.CartItem;
 import com.example.shop.model.Product;
 import com.example.shop.service.CartService;
+import com.example.shop.service.ProductService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import org.thymeleaf.spring6.SpringWebFluxTemplateEngine;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import reactor.core.publisher.Mono;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
-@AutoConfigureMockMvc
-class CartControllerTest extends BaseTest {
+@WebFluxTest(controllers = CartController.class)
+@Import({CartController.class, CartControllerTest.TestConfig.class})
+class CartControllerTest {
+
+    @Configuration
+    static class TestConfig {
+        @Bean
+        public SpringWebFluxTemplateEngine templateEngine() {
+            return new SpringWebFluxTemplateEngine();
+        }
+    }
 
     @Autowired
-    private MockMvc mockMvc;
+    private WebTestClient webTestClient;
 
     @MockBean
     private CartService cartService;
 
+    @MockBean
+    private ProductService productService;
+
     private Product testProduct;
     private Cart testCart;
+    private CartItem testCartItem;
 
     @BeforeEach
     void setUp() {
         testProduct = TestData.createTestProduct();
         testCart = TestData.createTestCart();
-        testCart.getItems().add(TestData.createTestCartItem(testProduct));
+        testCartItem = TestData.createTestCartItem(testProduct);
+        testCart.getItems().add(testCartItem);
 
-        when(cartService.getCart(any())).thenReturn(testCart);
-        when(cartService.addToCart(any(), any())).thenReturn(testCart);
-        when(cartService.decreaseItems(any(), any())).thenReturn(testCart);
-        when(cartService.getCartCounter(any())).thenReturn(testCart.getItems().size());
+        when(cartService.getCart(anyLong())).thenReturn(Mono.just(testCart));
+        when(cartService.addItemToCart(anyLong(), any(CartItem.class))).thenReturn(Mono.just(testCart));
+        when(cartService.updateItemQuantity(anyLong(), anyLong(), any(Integer.class))).thenReturn(Mono.just(testCart));
+        when(cartService.removeItemFromCart(anyLong(), anyLong())).thenReturn(Mono.just(testCart));
+        when(cartService.getCartCounter(anyLong())).thenReturn(Mono.just(1));
+        when(cartService.getProductsCounter(anyLong(), anyLong())).thenReturn(Mono.just(1));
+        when(productService.findProductById(anyLong())).thenReturn(Mono.just(testProduct));
     }
 
     @Test
-    void addToCart_ValidProduct_ShouldReturnOk() throws Exception {
-        mockMvc.perform(post("/cart/add")
-                        .param("productId", testProduct.getId().toString())
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED))
-                .andExpect(status().isOk());
-
-        verify(cartService).addToCart(any(), eq(testProduct.getId()));
+    void getCartPage_ShouldReturnCartPage() {
+        webTestClient.get()
+                .uri("/cart")
+                .exchange()
+                .expectStatus().isOk();
     }
 
     @Test
-    void decreaseItems_ValidProduct_ShouldReturnOk() throws Exception {
-        mockMvc.perform(post("/cart/decrease")
-                        .param("productId", testProduct.getId().toString())
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED))
-                .andExpect(status().isOk());
-
-        verify(cartService).decreaseItems(any(), eq(testProduct.getId()));
+    void getCart_ShouldReturnCart() {
+        webTestClient.get()
+                .uri("/cart/api")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(Cart.class)
+                .isEqualTo(testCart);
     }
 
     @Test
-    void removeFromCart_ValidProduct_ShouldReturnOk() throws Exception {
-        doNothing().when(cartService).removeFromCart(any(), any());
-
-        mockMvc.perform(post("/cart/remove")
-                        .param("productId", testProduct.getId().toString())
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED))
-                .andExpect(status().isOk());
-
-        verify(cartService).removeFromCart(any(), eq(testProduct.getId()));
+    void getCartCounter_ShouldReturnItemCount() {
+        webTestClient.get()
+                .uri("/cart/counter")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(Integer.class)
+                .isEqualTo(1);
     }
 
     @Test
-    void getCart_ShouldReturnCartPage() throws Exception {
-        mockMvc.perform(get("/cart"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("cart"))
-                .andExpect(model().attributeExists("cart"));
-
-        verify(cartService).getCart(any());
+    void getProductsCounter_ShouldReturnProductCount() {
+        webTestClient.get()
+                .uri("/cart/count?productId=1")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(Integer.class)
+                .isEqualTo(1);
     }
 
     @Test
-    void getCartCounter_ShouldReturnItemCount() throws Exception {
-        mockMvc.perform(get("/cart/counter"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("1"));
+    void addToCart_ValidProduct_ShouldReturnCart() {
+        webTestClient.post()
+                .uri("/cart/add?productId=1")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(Cart.class)
+                .isEqualTo(testCart);
+    }
+
+    @Test
+    void decreaseItems_ValidProduct_ShouldReturnCart() {
+        webTestClient.post()
+                .uri("/cart/decrease?productId=1")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(Cart.class)
+                .isEqualTo(testCart);
+    }
+
+    @Test
+    void removeFromCart_ValidProduct_ShouldReturnCart() {
+        webTestClient.post()
+                .uri("/cart/remove?productId=1")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(Cart.class)
+                .isEqualTo(testCart);
     }
 } 

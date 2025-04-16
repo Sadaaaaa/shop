@@ -1,15 +1,9 @@
 package com.example.shop.repository;
 
 import com.example.shop.model.Order;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import reactor.core.publisher.Flux;
 
-import java.util.List;
-
-@Repository
-public interface OrderRepository extends JpaRepository<Order, Long> {
-    @Query("SELECT o FROM Order o JOIN o.orderItems oi WHERE oi.order.id = o.id")
-    List<Order> findByUserId(@Param("userId") Long userId);
+public interface OrderRepository extends R2dbcRepository<Order, Long> {
+    Flux<Order> findByUserId(Long userId);
 }

@@ -1,27 +1,25 @@
 package com.example.shop.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
 @Data
-@Builder
-@Table(name = "cart_items")
-@AllArgsConstructor
-@NoArgsConstructor
-@Entity
+@Table("cart_items")
 public class CartItem {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @ManyToOne
+
+    @Column("cart_id")
+    private Long cartId;
+
+    @Column("product_id")
+    private Long productId;
+    private Integer quantity;
+    private Double price;
+
+    @Transient
     private Product product;
-    private int quantity;
 }

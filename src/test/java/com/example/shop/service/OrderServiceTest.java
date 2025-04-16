@@ -1,92 +1,88 @@
 package com.example.shop.service;
 
-import com.example.shop.BaseTest;
 import com.example.shop.TestData;
-import com.example.shop.model.Cart;
+import com.example.shop.config.TestConfig;
 import com.example.shop.model.Order;
 import com.example.shop.model.OrderItem;
-import com.example.shop.model.Product;
+import com.example.shop.repository.OrderItemRepository;
 import com.example.shop.repository.OrderRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.when;
 
-class OrderServiceTest extends BaseTest {
-
-    @Autowired
-    private OrderService orderService;
+@SpringBootTest
+@Import(TestConfig.class)
+@ActiveProfiles("test")
+class OrderServiceTest {
 
     @MockBean
     private OrderRepository orderRepository;
 
     @MockBean
-    private CartService cartService;
+    private OrderItemRepository orderItemRepository;
 
-    private Product testProduct;
-    private Cart testCart;
+    @Autowired
+    private OrderService orderService;
+
     private Order testOrder;
-    private List<OrderItem> testOrderItems;
+    private OrderItem testOrderItem;
 
     @BeforeEach
     void setUp() {
-        testProduct = TestData.createTestProduct();
-        testCart = TestData.createTestCart();
         testOrder = TestData.createTestOrder();
-        testOrderItems = new ArrayList<>();
-        
-        OrderItem orderItem = TestData.createTestOrderItem(testProduct);
-        testOrderItems.add(orderItem);
-        
-        testCart.getItems().add(TestData.createTestCartItem(testProduct));
-        
-        when(cartService.getCart(TEST_USER_ID)).thenReturn(testCart);
-        when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
-        when(orderRepository.findById(testOrder.getId())).thenReturn(Optional.of(testOrder));
-        when(orderRepository.findByUserId(TEST_USER_ID)).thenReturn(Arrays.asList(testOrder));
+        testOrderItem = TestData.createTestOrderItem();
+
+        when(orderRepository.save(any(Order.class))).thenReturn(Mono.just(testOrder));
+        when(orderItemRepository.saveAll(any(List.class))).thenReturn(Flux.just(testOrderItem));
+        when(orderItemRepository.findByOrderId(anyLong())).thenReturn(Flux.just(testOrderItem));
     }
 
     @Test
     void createOrder_ValidOrderItems_ShouldCreateOrder() {
-        Order result = orderService.createOrder(TEST_USER_ID, testOrderItems);
+        List<OrderItem> orderItems = List.of(testOrderItem);
 
-        assertNotNull(result);
-        verify(orderRepository).save(any(Order.class));
+        StepVerifier.create(orderService.createOrder(1L, orderItems))
+                .expectNext(testOrder)
+                .verifyComplete();
     }
 
     @Test
     void getOrderById_ExistingOrder_ShouldReturnOrder() {
-        Order result = orderService.getOrderById(testOrder.getId());
+        when(orderRepository.findById(1L)).thenReturn(Mono.just(testOrder));
 
-        assertNotNull(result);
-        assertEquals(testOrder.getId(), result.getId());
+        StepVerifier.create(orderService.getOrderById(1L, 1L))
+                .expectNext(testOrder)
+                .verifyComplete();
     }
 
     @Test
-    void getAllOrders_ShouldReturnOrdersList() {
-        when(orderRepository.findAll()).thenReturn(Arrays.asList(testOrder));
-        List<Order> results = orderService.getAllOrders();
+    void getAllOrders_ExistingOrders_ShouldReturnOrders() {
+        when(orderRepository.findByUserId(1L)).thenReturn(Flux.just(testOrder));
 
-        assertFalse(results.isEmpty());
-        assertEquals(1, results.size());
-        assertEquals(testOrder.getId(), results.get(0).getId());
+        StepVerifier.create(orderService.getAllOrders(1L))
+                .expectNext(testOrder)
+                .verifyComplete();
     }
 
     @Test
     void calculateOrderTotal_ValidOrderItems_ShouldReturnCorrectTotal() {
-        Order result = orderService.createOrder(TEST_USER_ID, testOrderItems);
-        assertNotNull(result.getTotalAmount());
-        double expectedTotal = testProduct.getPrice() * testOrderItems.get(0).getQuantity();
+        List<OrderItem> orderItems = List.of(testOrderItem);
 
-        assertEquals(expectedTotal, result.getTotalAmount(), 0.01);
+        StepVerifier.create(orderService.createOrder(1L, orderItems))
+                .expectNextMatches(order -> order.getTotalAmount() == TestData.TEST_PRICE)
+                .verifyComplete();
     }
 } 
