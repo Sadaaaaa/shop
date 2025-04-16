@@ -7,15 +7,19 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.nio.ByteBuffer;
 
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
+    private final DatabaseClient databaseClient;
 
     @Override
     public Flux<Product> getAllProducts() {
@@ -96,5 +100,34 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Mono<Product> findProductById(Long id) {
         return productRepository.findById(id);
+    }
+
+//    @Override
+//    public Mono<ByteBuffer> findProductImageById(Long id) {
+//        return productRepository.findImageById(id);
+//    }
+    @Override
+    public Mono<ByteBuffer> findProductImageById(Long id) {
+        return databaseClient.sql("SELECT image FROM products WHERE id = :id")
+                .bind("id", id)
+                .map((row, metadata) -> {
+                    Object img = row.get("image");
+                    if (img instanceof ByteBuffer) {
+                        ByteBuffer buffer = (ByteBuffer) img;
+                        // Создаем копию буфера и сбрасываем позицию
+                        ByteBuffer duplicate = buffer.duplicate();
+                        duplicate.rewind();
+                        return duplicate;
+                    }
+                    return null;
+                })
+                .first()
+                .doOnNext(buffer -> {
+                    if (buffer != null) {
+                        System.out.println("Retrieved buffer: position=" + buffer.position() +
+                                ", limit=" + buffer.limit() +
+                                ", capacity=" + buffer.capacity());
+                    }
+                });
     }
 }

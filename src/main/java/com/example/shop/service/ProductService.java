@@ -5,6 +5,8 @@ import org.springframework.data.domain.Page;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.nio.ByteBuffer;
+
 public interface ProductService {
     Flux<Product> getAllProducts();
     Mono<Product> getProductById(Long id);
@@ -16,4 +18,6 @@ public interface ProductService {
     
     Mono<Page<Product>> findProductsByNameOrDescription(String search, int page, int size, String sort);
     Mono<Product> findProductById(Long id);
+
+    Mono<ByteBuffer> findProductImageById(Long id);
 }

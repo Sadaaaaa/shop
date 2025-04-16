@@ -7,6 +7,8 @@ import org.springframework.data.repository.query.Param;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.nio.ByteBuffer;
+
 public interface ProductRepository extends R2dbcRepository<Product, Long> {
     
     @Query("SELECT * FROM products WHERE LOWER(name) LIKE LOWER(CONCAT('%', :name, '%'))")
@@ -34,4 +36,7 @@ public interface ProductRepository extends R2dbcRepository<Product, Long> {
     Flux<Product> findAllProducts();
 
     Mono<Product> findByName(String name);
+
+    @Query("SELECT image FROM products WHERE id = :id")
+    Mono<ByteBuffer> findImageById(@Param("id") Long id);
 }

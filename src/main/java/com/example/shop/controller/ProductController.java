@@ -4,12 +4,15 @@ import com.example.shop.model.Product;
 import com.example.shop.service.ProductService;
 import com.example.shop.service.CartService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
+import java.nio.ByteBuffer;
 import java.util.Map;
 
 @Controller
@@ -55,10 +58,28 @@ public class ProductController {
     }
 
     @GetMapping(value = "/products/image/{id}", produces = MediaType.IMAGE_JPEG_VALUE)
-    public Mono<byte[]> getProductImage(@PathVariable Long id) {
-        return productService.findProductById(id)
-                .map(Product::getImage)
-                .filter(image -> image != null && image.length > 0)
-                .switchIfEmpty(Mono.just(new byte[0]));
+    public Mono<ResponseEntity<byte[]>> getProductImage(@PathVariable Long id) {
+        return productService.findProductImageById(id)
+                .filter(buffer -> buffer != null)
+                .map(buffer -> {
+                    // Убедимся, что мы работаем с дубликатом буфера и сбрасываем позицию
+                    ByteBuffer duplicate = buffer.duplicate();
+                    duplicate.rewind(); // Сбрасываем позицию на начало
+
+                    // Теперь создаем массив байтов и заполняем его
+                    byte[] bytes = new byte[duplicate.remaining()];
+                    duplicate.get(bytes);
+
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.IMAGE_JPEG)
+                            .body(bytes);
+                })
+                .defaultIfEmpty(ResponseEntity.notFound().build())
+                .onErrorResume(e -> {
+                    // Логируем ошибку и возвращаем статус 500
+                    System.err.println("Error retrieving image: " + e.getMessage());
+                    e.printStackTrace();
+                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
+                });
     }
 }
