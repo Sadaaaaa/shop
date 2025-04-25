@@ -39,7 +39,7 @@ public class ProductServiceImpl implements ProductService {
             log.info("Получен список товаров из кэша Redis");
             return Flux.fromIterable(cachedProducts);
         }
-        
+
         log.info("Список товаров не найден в кэше Redis, загружаем из БД");
         return productRepository.findAllProducts()
                 .collectList()
@@ -51,13 +51,10 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Mono<Product> saveProduct(Product product) {
-        log.info("Сохранение товара: {}", product);
         return productRepository.save(product)
                 .doOnNext(savedProduct -> {
-                    String key = PRODUCT_KEY_PREFIX + savedProduct.getId();
-                    redisTemplate.opsForValue().set(key, savedProduct, CACHE_TTL, TimeUnit.MINUTES);
-                    redisTemplate.delete(PRODUCTS_LIST_KEY);
-                    log.info("Товар с ID {} сохранен в кэш Redis, список товаров очищен", savedProduct.getId());
+
+                    redisTemplate.getConnectionFactory().getConnection().flushDb();
                 });
     }
 
@@ -65,9 +62,8 @@ public class ProductServiceImpl implements ProductService {
     public Mono<Void> deleteProduct(Long id) {
         return productRepository.deleteById(id)
                 .doOnSuccess(v -> {
-                    redisTemplate.delete(PRODUCT_KEY_PREFIX + id);
-                    redisTemplate.delete(PRODUCTS_LIST_KEY);
-                    log.info("Товар с ID {} удален из кэша Redis, список товаров очищен", id);
+
+                    redisTemplate.getConnectionFactory().getConnection().flushDb();
                 });
     }
 
@@ -100,8 +96,8 @@ public class ProductServiceImpl implements ProductService {
         }
 
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, property));
-        String cacheKey = String.format("products:search:%s:page%d:size%d:sort%s", 
-            search != null ? search : "all", page, size, sort != null ? sort : "default");
+        String cacheKey = String.format("products:search:%s:page%d:size%d:sort%s",
+                search != null ? search : "all", page, size, sort != null ? sort : "default");
 
         @SuppressWarnings("unchecked")
         PageWrapper<Product> cachedPage = (PageWrapper<Product>) redisTemplate.opsForValue().get(cacheKey);
@@ -139,7 +135,7 @@ public class ProductServiceImpl implements ProductService {
             log.info("Товар с ID {} получен из кэша Redis", id);
             return Mono.just(cachedProduct);
         }
-        
+
         log.info("Товар с ID {} не найден в кэше Redis, загружаем из БД", id);
         return productRepository.findById(id)
                 .doOnNext(product -> {
