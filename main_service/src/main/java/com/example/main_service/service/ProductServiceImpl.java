@@ -1,38 +1,76 @@
 package com.example.main_service.service;
 
+import com.example.main_service.model.PageWrapper;
 import com.example.main_service.model.Product;
 import com.example.main_service.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final DatabaseClient databaseClient;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private static final String PRODUCT_KEY_PREFIX = "product:";
+    private static final String PRODUCTS_LIST_KEY = "products:list";
+    private static final long CACHE_TTL = 10; // минуты
 
     @Override
     public Flux<Product> getAllProducts() {
-        return productRepository.findAllProducts();
+        @SuppressWarnings("unchecked")
+        List<Product> cachedProducts = (List<Product>) redisTemplate.opsForValue().get(PRODUCTS_LIST_KEY);
+        if (cachedProducts != null) {
+            log.info("Получен список товаров из кэша Redis");
+            return Flux.fromIterable(cachedProducts);
+        }
+        
+        log.info("Список товаров не найден в кэше Redis, загружаем из БД");
+        return productRepository.findAllProducts()
+                .collectList()
+                .flatMapMany(products -> {
+                    redisTemplate.opsForValue().set(PRODUCTS_LIST_KEY, products, CACHE_TTL, TimeUnit.MINUTES);
+                    log.info("Список товаров сохранен в кэш Redis");
+                    return Flux.fromIterable(products);
+                });
     }
 
     @Override
     public Mono<Product> getProductById(Long id) {
-        return productRepository.findById(id);
+        String key = PRODUCT_KEY_PREFIX + id;
+        @SuppressWarnings("unchecked")
+        Product cachedProduct = (Product) redisTemplate.opsForValue().get(key);
+        if (cachedProduct != null) {
+            log.info("Товар с ID {} получен из кэша Redis", id);
+            return Mono.just(cachedProduct);
+        }
+        
+        log.info("Товар с ID {} не найден в кэше Redis, загружаем из БД", id);
+        return productRepository.findById(id)
+                .doOnNext(product -> {
+                    redisTemplate.opsForValue().set(key, product, CACHE_TTL, TimeUnit.MINUTES);
+                    log.info("Товар с ID {} сохранен в кэш Redis", id);
+                });
     }
 
     @Override
     public Flux<Product> searchProducts(String name, String description) {
+        log.info("Поиск товаров по имени: {}, описанию: {}", name, description);
         if (name != null && description != null) {
             return productRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(name, description);
         } else if (name != null) {
@@ -43,47 +81,62 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Flux<Product> filterProductsByPrice(Double minPrice, Double maxPrice) {
+        log.info("Фильтрация товаров по цене: от {} до {}", minPrice, maxPrice);
         return productRepository.findByPriceBetween(minPrice, maxPrice);
     }
 
     @Override
     public Flux<Product> findWithFilters(String name, Double minPrice, Double maxPrice) {
+        log.info("Поиск товаров с фильтрами: имя={}, цена от {} до {}", name, minPrice, maxPrice);
         return productRepository.findWithFilters(name, minPrice, maxPrice);
     }
 
     @Override
     public Mono<Product> saveProduct(Product product) {
-        return productRepository.save(product);
+        log.info("Сохранение товара: {}", product);
+        return productRepository.save(product)
+                .doOnNext(savedProduct -> {
+                    String key = PRODUCT_KEY_PREFIX + savedProduct.getId();
+                    redisTemplate.opsForValue().set(key, savedProduct, CACHE_TTL, TimeUnit.MINUTES);
+                    redisTemplate.delete(PRODUCTS_LIST_KEY);
+                    log.info("Товар с ID {} сохранен в кэш Redis, список товаров очищен", savedProduct.getId());
+                });
     }
 
     @Override
     public Mono<Void> deleteProduct(Long id) {
-        return productRepository.deleteById(id);
+        log.info("Удаление товара с ID {}", id);
+        return productRepository.deleteById(id)
+                .doOnSuccess(v -> {
+                    redisTemplate.delete(PRODUCT_KEY_PREFIX + id);
+                    redisTemplate.delete(PRODUCTS_LIST_KEY);
+                    log.info("Товар с ID {} удален из кэша Redis, список товаров очищен", id);
+                });
     }
 
     @Override
     public Mono<Page<Product>> findProductsByNameOrDescription(String search, int page, int size, String sort) {
+        log.info("Поиск товаров: search={}, page={}, size={}, sort={}", search, page, size, sort);
         final Sort.Direction direction;
         final String property;
 
         if (sort != null) {
             switch (sort) {
-                case "name_desc" -> {
+                case "name_desc":
                     direction = Sort.Direction.DESC;
                     property = "name";
-                }
-                case "price_asc" -> {
+                    break;
+                case "price_asc":
                     direction = Sort.Direction.ASC;
                     property = "price";
-                }
-                case "price_desc" -> {
+                    break;
+                case "price_desc":
                     direction = Sort.Direction.DESC;
                     property = "price";
-                }
-                default -> {
+                    break;
+                default:
                     direction = Sort.Direction.ASC;
                     property = "name";
-                }
             }
         } else {
             direction = Sort.Direction.ASC;
@@ -91,56 +144,65 @@ public class ProductServiceImpl implements ProductService {
         }
 
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, property));
+        String cacheKey = String.format("products:search:%s:page%d:size%d:sort%s", 
+            search != null ? search : "all", page, size, sort != null ? sort : "default");
 
+        @SuppressWarnings("unchecked")
+        PageWrapper<Product> cachedPage = (PageWrapper<Product>) redisTemplate.opsForValue().get(cacheKey);
+        if (cachedPage != null) {
+            log.info("Результаты поиска получены из кэша Redis");
+            return Mono.just(cachedPage.toPage());
+        }
+
+        log.info("Результаты поиска не найдены в кэше Redis, загружаем из БД");
         Flux<Product> products;
         if (search != null && !search.isEmpty()) {
-            products = productRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(search, search)
-                    .sort((p1, p2) -> {
-                        if (property.equals("name")) {
-                            return direction == Sort.Direction.ASC ?
-                                    p1.getName().compareToIgnoreCase(p2.getName()) :
-                                    p2.getName().compareToIgnoreCase(p1.getName());
-                        } else {
-                            return direction == Sort.Direction.ASC ?
-                                    Double.compare(p1.getPrice(), p2.getPrice()) :
-                                    Double.compare(p2.getPrice(), p1.getPrice());
-                        }
-                    });
+            products = productRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(search, search);
         } else {
-            products = productRepository.findAllProducts()
-                    .sort((p1, p2) -> {
-                        if (property.equals("name")) {
-                            return direction == Sort.Direction.ASC ?
-                                    p1.getName().compareToIgnoreCase(p2.getName()) :
-                                    p2.getName().compareToIgnoreCase(p1.getName());
-                        } else {
-                            return direction == Sort.Direction.ASC ?
-                                    Double.compare(p1.getPrice(), p2.getPrice()) :
-                                    Double.compare(p2.getPrice(), p1.getPrice());
-                        }
-                    });
+            products = productRepository.findAllProducts();
         }
 
         return products
-                .skip(page * (long) size)
-                .take(size)
                 .collectList()
-                .zipWith(products.count())
-                .map(tuple -> new PageImpl<>(tuple.getT1(), pageRequest, tuple.getT2()));
+                .map(allProducts -> {
+                    int start = (int) pageRequest.getOffset();
+                    int end = Math.min((start + pageRequest.getPageSize()), allProducts.size());
+                    List<Product> pageContent = allProducts.subList(start, end);
+                    PageImpl<Product> page1 = new PageImpl<>(pageContent, pageRequest, allProducts.size());
+                    PageWrapper<Product> wrapper = PageWrapper.fromPage(page1);
+                    redisTemplate.opsForValue().set(cacheKey, wrapper, CACHE_TTL, TimeUnit.MINUTES);
+                    log.info("Результаты поиска сохранены в кэш Redis");
+                    return page1;
+                });
     }
 
     @Override
     public Mono<Product> findProductById(Long id) {
-        return productRepository.findById(id);
+        String key = PRODUCT_KEY_PREFIX + id;
+        @SuppressWarnings("unchecked")
+        Product cachedProduct = (Product) redisTemplate.opsForValue().get(key);
+        if (cachedProduct != null) {
+            log.info("Товар с ID {} получен из кэша Redis", id);
+            return Mono.just(cachedProduct);
+        }
+        
+        log.info("Товар с ID {} не найден в кэше Redis, загружаем из БД", id);
+        return productRepository.findById(id)
+                .doOnNext(product -> {
+                    redisTemplate.opsForValue().set(key, product, CACHE_TTL, TimeUnit.MINUTES);
+                    log.info("Товар с ID {} сохранен в кэш Redis", id);
+                });
     }
 
     @Override
     public Mono<ByteBuffer> findProductImageById(Long id) {
+        log.info("Загрузка изображения товара с ID {}", id);
         return databaseClient.sql("SELECT image FROM products WHERE id = :id")
                 .bind("id", id)
                 .map((row, metadata) -> {
                     Object img = row.get("image");
-                    if (img instanceof ByteBuffer buffer) {
+                    if (img instanceof ByteBuffer) {
+                        ByteBuffer buffer = (ByteBuffer) img;
                         ByteBuffer duplicate = buffer.duplicate();
                         duplicate.rewind();
                         return duplicate;
@@ -148,5 +210,31 @@ public class ProductServiceImpl implements ProductService {
                     return null;
                 })
                 .first();
+    }
+
+    @Override
+    public Mono<Page<Product>> findAllWithPagination(PageRequest pageRequest) {
+        String cacheKey = "products:page:" + pageRequest.getPageNumber() + ":size:" + pageRequest.getPageSize();
+
+        @SuppressWarnings("unchecked")
+        PageWrapper<Product> cachedPage = (PageWrapper<Product>) redisTemplate.opsForValue().get(cacheKey);
+        if (cachedPage != null) {
+            log.info("Результаты поиска получены из кэша Redis");
+            return Mono.just(cachedPage.toPage());
+        }
+
+        log.info("Результаты поиска не найдены в кэше Redis, загружаем из БД");
+        return productRepository.findAllProducts()
+                .collectList()
+                .map(allProducts -> {
+                    int start = (int) pageRequest.getOffset();
+                    int end = Math.min((start + pageRequest.getPageSize()), allProducts.size());
+                    List<Product> pageContent = allProducts.subList(start, end);
+                    PageImpl<Product> page = new PageImpl<>(pageContent, pageRequest, allProducts.size());
+                    PageWrapper<Product> wrapper = PageWrapper.fromPage(page);
+                    redisTemplate.opsForValue().set(cacheKey, wrapper, CACHE_TTL, TimeUnit.MINUTES);
+                    log.info("Результаты поиска сохранены в кэш Redis");
+                    return page;
+                });
     }
 }

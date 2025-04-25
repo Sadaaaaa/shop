@@ -2,6 +2,7 @@ package com.example.main_service.service;
 
 import com.example.main_service.model.Product;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -27,4 +28,6 @@ public interface ProductService {
     Mono<Product> findProductById(Long id);
 
     Mono<ByteBuffer> findProductImageById(Long id);
+
+    Mono<Page<Product>> findAllWithPagination(PageRequest pageRequest);
 }
