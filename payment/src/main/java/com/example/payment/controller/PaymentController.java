@@ -1,42 +1,42 @@
 package com.example.payment.controller;
 
+import com.example.payment.api.DefaultApi;
+import com.example.payment.model.dto.Balance;
+import com.example.payment.model.dto.Error;
 import com.example.payment.service.PaymentService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-
-import java.math.BigDecimal;
+import org.springframework.http.ResponseEntity;
 
 @RestController
-@RequestMapping("/payments")
-public class PaymentController {
+public class PaymentController implements DefaultApi {
     private final PaymentService paymentService;
 
-    @Autowired
     public PaymentController(PaymentService paymentService) {
         this.paymentService = paymentService;
     }
 
-    @GetMapping("/balance")
-    public Mono<ResponseEntity<BigDecimal>> getBalance() {
+    @Override
+    public Mono<ResponseEntity<Balance>> getBalance(ServerWebExchange exchange) {
         return paymentService.getBalance()
-                .map(ResponseEntity::ok);
+                .map(account -> {
+                    Balance balance = new Balance();
+                    balance.setAmount(account.getAmount());
+                    return ResponseEntity.ok(balance);
+                })
+                .onErrorResume(e -> {
+                    // Создаем пустой баланс для ошибочного случая
+                    Balance balance = new Balance();
+                    balance.setAmount(0.0);
+                    return Mono.just(ResponseEntity.internalServerError().body(balance));
+                });
     }
 
-    @PostMapping("/process")
-    public Mono<ResponseEntity<Boolean>> processPayment(@RequestParam BigDecimal amount) {
+    @Override
+    public Mono<ResponseEntity<Boolean>> processPayment(Double amount, ServerWebExchange exchange) {
         return paymentService.processPayment(amount)
-                .map(success -> {
-                    if (success) {
-                        return ResponseEntity.ok(true);
-                    } else {
-                        return ResponseEntity.badRequest().body(false);
-                    }
-                });
+                .map(ResponseEntity::ok)
+                .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().body(false)));
     }
 } 

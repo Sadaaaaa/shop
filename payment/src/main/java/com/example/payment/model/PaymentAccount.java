@@ -1,31 +1,27 @@
 package com.example.payment.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import lombok.Data;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Table;
 
-import java.math.BigDecimal;
-
-@Data
-@Entity
+@Table("payment_accounts")
 public class PaymentAccount {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private Double amount;
 
-    private BigDecimal balance;
-
-    public PaymentAccount() {
-        this.balance = BigDecimal.ZERO;
+    public Long getId() {
+        return id;
     }
 
     public void setId(Long id) {
         this.id = id;
     }
 
-    public void setBalance(BigDecimal balance) {
-        this.balance = balance;
+    public Double getAmount() {
+        return amount;
+    }
+
+    public void setAmount(Double amount) {
+        this.amount = amount;
     }
 } 
