@@ -61,11 +61,19 @@
 
         <div class="cart-summary">
             <div class="cart-total">
-                Итого: <span th:text="${#aggregates.sum(cart.items.![price * quantity])} + ' ₽'">0 ₽</span>
+                Итого: <span id="cartTotal" th:text="${#aggregates.sum(cart.items.![price * quantity])} + ' ₽'">0 ₽</span>
             </div>
-            <form th:action="@{/orders/create}" method="post">
-                <button type="submit" class="btn btn-primary">Оформить заказ</button>
-            </form>
+            <div class="d-flex flex-column align-items-start gap-2">
+                <div id="insufficientFundsMessage" class="text-danger" style="display: none;">
+                    Недостаточно средств для оформления заказа. Необходимо пополнить баланс.
+                </div>
+                <div id="paymentErrorMessage" class="text-danger" style="display: none;">
+                    Ошибка при оплате заказа. Пожалуйста, попробуйте снова.
+                </div>
+                <form id="orderForm" th:action="@{/orders/create}" method="post">
+                    <button type="submit" id="checkoutButton" class="btn btn-primary" disabled>Оформить заказ</button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -81,6 +89,27 @@
         if (cartCountElement) {
             cartCountElement.textContent = cartSize;
             cartCountElement.style.display = cartSize > 0 ? "block" : "none";
+        }
+    }
+
+    function checkBalance(balance) {
+        const cartTotalElement = document.getElementById('cartTotal');
+        const checkoutButton = document.getElementById('checkoutButton');
+        const insufficientFundsMessage = document.getElementById('insufficientFundsMessage');
+        
+        if (cartTotalElement && checkoutButton) {
+            const totalText = cartTotalElement.textContent;
+            const total = parseFloat(totalText.replace(' ₽', ''));
+            
+            if (balance >= total) {
+                checkoutButton.disabled = false;
+                checkoutButton.title = '';
+                insufficientFundsMessage.style.display = 'none';
+            } else {
+                checkoutButton.disabled = true;
+                checkoutButton.title = 'Недостаточно средств для оформления заказа';
+                insufficientFundsMessage.style.display = 'block';
+            }
         }
     }
 
@@ -111,6 +140,12 @@
                 quantityElement.textContent = newQuantity;
                 updateTotal(cart);
                 updateCartUI(cart.items.length);
+
+                // Обновляем состояние кнопки после изменения корзины
+                fetch('http://localhost:8081/payments/balance')
+                    .then(response => response.json())
+                    .then(data => checkBalance(data.amount))
+                    .catch(error => console.error('Error:', error));
             })
             .catch(error => {
                 console.error('Ошибка:', error);
@@ -133,6 +168,12 @@
                 updateTotal(cart);
                 updateCartUI(cart.items.length);
 
+                // Обновляем состояние кнопки после изменения корзины
+                fetch('http://localhost:8081/payments/balance')
+                    .then(response => response.json())
+                    .then(data => checkBalance(data.amount))
+                    .catch(error => console.error('Error:', error));
+
                 if (cart.items.length === 0) {
                     const cartItemsContainer = document.querySelector('.cart-items');
                     const cartSummary = document.querySelector('.cart-summary');
@@ -146,7 +187,6 @@
                     if (emptyCartMessage) {
                         emptyCartMessage.style.display = 'block';
                     } else {
-
                         const mainContainer = document.querySelector('.main-content');
                         if (mainContainer) {
                             const emptyCartDiv = document.createElement('div');
@@ -171,6 +211,12 @@
         if (totalElement && cart && cart.items) {
             const total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             totalElement.textContent = `${total.toFixed(2)} ₽`;
+
+            // Обновляем состояние кнопки после изменения суммы
+            fetch('http://localhost:8081/payments/balance')
+                .then(response => response.json())
+                .then(data => checkBalance(data.amount))
+                .catch(error => console.error('Error:', error));
         }
     }
 
@@ -193,13 +239,70 @@
             })
             .then(data => {
                 const balanceElement = document.getElementById('userBalance');
-                balanceElement.textContent = data.amount.toFixed(2) + ' ₽';
+                const balance = data.amount;
+                balanceElement.textContent = balance.toFixed(2) + ' ₽';
+                checkBalance(balance);
             })
             .catch(error => {
                 const balanceElement = document.getElementById('userBalance');
                 balanceElement.textContent = 'баланс недоступен';
                 console.error('Error:', error);
             });
+    });
+
+    document.getElementById('orderForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        const cartTotalElement = document.getElementById('cartTotal');
+        const total = parseFloat(cartTotalElement.textContent.replace(' ₽', ''));
+        const paymentErrorMessage = document.getElementById('paymentErrorMessage');
+        const checkoutButton = document.getElementById('checkoutButton');
+        
+        // Отключаем кнопку на время обработки
+        checkoutButton.disabled = true;
+        checkoutButton.textContent = 'Обработка...';
+        paymentErrorMessage.style.display = 'none';
+
+        // Сначала пытаемся провести платеж
+        fetch('http://localhost:8081/payments/process?amount=' + total, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(paymentResult => {
+            if (paymentResult === true) {
+                // Если платеж прошел успешно, создаем заказ
+                return fetch('/orders/create', {
+                    method: 'POST'
+                });
+            } else {
+                throw new Error('Платеж не прошел');
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Ошибка при создании заказа');
+            }
+            // Перенаправляем на страницу заказов после успешного создания
+            window.location.href = '/orders';
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            paymentErrorMessage.textContent = 'Ошибка при оплате заказа. Пожалуйста, попробуйте снова.';
+            paymentErrorMessage.style.display = 'block';
+            checkoutButton.disabled = false;
+            checkoutButton.textContent = 'Оформить заказ';
+            
+            // Обновляем баланс после неудачной попытки
+            fetch('http://localhost:8081/payments/balance')
+                .then(response => response.json())
+                .then(data => {
+                    const balanceElement = document.getElementById('userBalance');
+                    const balance = data.amount;
+                    balanceElement.textContent = balance.toFixed(2) + ' ₽';
+                    checkBalance(balance);
+                })
+                .catch(error => console.error('Error:', error));
+        });
     });
 </script>
 </body>
