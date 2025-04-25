@@ -43,7 +43,7 @@ public class CartController {
 
     @GetMapping("/count")
     @ResponseBody
-    public Mono<Integer> getProductsCounter(@RequestParam(required = true) Long productId) {
+    public Mono<Integer> getProductsCounter(@RequestParam Long productId) {
         if (productId == null) {
             return Mono.error(new IllegalArgumentException("Product ID is required"));
         }
@@ -52,7 +52,7 @@ public class CartController {
 
     @PostMapping("/add")
     @ResponseBody
-    public Mono<Cart> addToCart(@RequestParam(required = true) Long productId) {
+    public Mono<Cart> addToCart(@RequestParam Long productId) {
         if (productId == null) {
             return Mono.error(new IllegalArgumentException("Product ID is required"));
         }
@@ -81,7 +81,7 @@ public class CartController {
 
     @PostMapping("/decrease")
     @ResponseBody
-    public Mono<Cart> decreaseItems(@RequestParam(required = true) Long productId) {
+    public Mono<Cart> decreaseItems(@RequestParam Long productId) {
         if (productId == null) {
             return Mono.error(new IllegalArgumentException("Product ID is required"));
         }
@@ -103,7 +103,7 @@ public class CartController {
 
     @PostMapping("/remove")
     @ResponseBody
-    public Mono<Cart> removeFromCart(@RequestParam(required = true) Long productId) {
+    public Mono<Cart> removeFromCart(@RequestParam Long productId) {
         if (productId == null) {
             return Mono.error(new IllegalArgumentException("Product ID is required"));
         }

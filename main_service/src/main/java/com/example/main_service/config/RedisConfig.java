@@ -1,6 +1,5 @@
 package com.example.main_service.config;
 
-import com.example.main_service.model.Product;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import org.springframework.context.annotation.Bean;
@@ -18,18 +17,18 @@ public class RedisConfig {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
         template.setKeySerializer(new StringRedisSerializer());
-        
+
         ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, 
-            ObjectMapper.DefaultTyping.NON_FINAL);
-        
+        objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance,
+                ObjectMapper.DefaultTyping.NON_FINAL);
+
         Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(Object.class);
         serializer.setObjectMapper(objectMapper);
-        
+
         template.setValueSerializer(serializer);
         template.setHashValueSerializer(serializer);
         template.setHashKeySerializer(new StringRedisSerializer());
-        
+
         return template;
     }
 } 

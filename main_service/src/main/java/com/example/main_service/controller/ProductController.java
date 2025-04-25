@@ -23,7 +23,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class ProductController {
 
-    private static final Long MOCK_USER = 1L; // TODO: to_reviewer: я хотел убрать в сервис, но тогда неочевидно, что пользователь должен приходить в контроллер с фронта
+    private static final Long MOCK_USER = 1L;
     private final ProductService productService;
     private final CartService cartService;
 

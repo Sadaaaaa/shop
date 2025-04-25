@@ -23,7 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderController {
 
-    private static final Long MOCK_USER_ID = 1L; // TODO: to_reviewer: я хотел убрать в сервис, но тогда неочевидно, что пользователь должен приходить в контроллер с фронта
+    private static final Long MOCK_USER_ID = 1L;
     private final OrderService orderService;
     private final CartService cartService;
 

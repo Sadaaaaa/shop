@@ -11,14 +11,6 @@ import java.nio.ByteBuffer;
 public interface ProductService {
     Flux<Product> getAllProducts();
 
-    Mono<Product> getProductById(Long id);
-
-    Flux<Product> searchProducts(String name, String description);
-
-    Flux<Product> filterProductsByPrice(Double minPrice, Double maxPrice);
-
-    Flux<Product> findWithFilters(String name, Double minPrice, Double maxPrice);
-
     Mono<Product> saveProduct(Product product);
 
     Mono<Void> deleteProduct(Long id);
@@ -29,5 +21,4 @@ public interface ProductService {
 
     Mono<ByteBuffer> findProductImageById(Long id);
 
-    Mono<Page<Product>> findAllWithPagination(PageRequest pageRequest);
 }

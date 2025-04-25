@@ -74,19 +74,4 @@ public class OrderServiceImpl implements OrderService {
                             .then(Mono.just(savedOrder));
                 });
     }
-
-    @Override
-    public Mono<Order> updateOrderStatus(Long userId, Long orderId, String status) {
-        return getOrderById(userId, orderId)
-                .flatMap(order -> {
-                    order.setStatus(status);
-                    return orderRepository.save(order);
-                });
-    }
-
-    @Override
-    public Mono<Void> deleteOrder(Long userId, Long orderId) {
-        return getOrderById(userId, orderId)
-                .flatMap(orderRepository::delete);
-    }
 }

@@ -16,7 +16,6 @@ public class PaymentService {
     }
 
     public Mono<PaymentAccount> getBalance(long userId) {
-        log.info("Запрос баланса для пользователя: {}", userId);
         return paymentAccountRepository.findByUserId(userId)
                 .doOnSuccess(account -> {
                     if (account != null) {
@@ -30,7 +29,6 @@ public class PaymentService {
     }
 
     public Mono<Boolean> processPayment(long userId, Double amount) {
-        log.info("Обработка платежа для пользователя: {}, сумма: {}", userId, amount);
         return paymentAccountRepository.findByUserId(userId)
                 .switchIfEmpty(Mono.error(new RuntimeException("Payment account not found")))
                 .flatMap(account -> {
