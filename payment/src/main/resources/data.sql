@@ -1,1 +1,1 @@
-INSERT INTO payment_account (balance) VALUES (100000.00) ON CONFLICT DO NOTHING;
+INSERT INTO payment_account (user_id, amount) VALUES (1, 100000.00) ON CONFLICT (user_id) DO NOTHING;

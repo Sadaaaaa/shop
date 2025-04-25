@@ -7,98 +7,102 @@
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
-    <div th:replace="~{fragments/header :: header}"></div>
+<div th:replace="~{fragments/header :: header}"></div>
 
-    <div class="container main-content">
-        <h1>Корзина</h1>
+<div class="container main-content">
+    <h1>Корзина</h1>
 
-        <div th:if="${cart != null and cart.items != null and !cart.items.isEmpty()}">
-            <div class="cart-items">
-                <div th:each="item : ${cart.items}" class="cart-item mb-4">
-                    <div class="row align-items-center">
-                        <div class="col-md-2">
-                            <img th:if="${item.product != null and item.product.image != null}" 
-                                 th:src="@{/products/image/{id}(id=${item.product.id})}" 
-                                 class="img-fluid" alt="Product Image">
-                        </div>
-                        <div class="col-md-3">
-                            <h3 th:text="${item.product != null ? item.product.name : 'Товар удален'}">Название товара</h3>
-                            <p th:text="${item.product != null ? item.product.description : ''}">Описание товара</p>
-                        </div>
-                        <div class="col-md-2">
-                            <p class="price" th:text="${item.price} + ' ₽'">0 ₽</p>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="quantity-controls">
-                                <button class="btn btn-outline-danger quantity-btn" 
-                                        th:attr="data-product-id=${item.product != null ? item.product.id : ''}"
-                                        onclick="updateQuantity(this.getAttribute('data-product-id'), -1)">
-                                    -
-                                </button>
-                                <span th:text="${item.quantity}">0</span>
-                                <button class="btn btn-outline-primary quantity-btn" 
-                                        th:attr="data-product-id=${item.product != null ? item.product.id : ''}"
-                                        onclick="updateQuantity(this.getAttribute('data-product-id'), 1)">
-                                    +
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-2">
-                            <button class="btn btn-danger" 
+    <div class="user-balance mb-4">
+        <h4>Ваш баланс: <span id="userBalance">загрузка...</span></h4>
+    </div>
+
+    <div th:if="${cart != null and cart.items != null and !cart.items.isEmpty()}">
+        <div class="cart-items">
+            <div th:each="item : ${cart.items}" class="cart-item mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-2">
+                        <img th:if="${item.product != null and item.product.image != null}"
+                             th:src="@{/products/image/{id}(id=${item.product.id})}"
+                             class="img-fluid" alt="Product Image">
+                    </div>
+                    <div class="col-md-3">
+                        <h3 th:text="${item.product != null ? item.product.name : 'Товар удален'}">Название товара</h3>
+                        <p th:text="${item.product != null ? item.product.description : ''}">Описание товара</p>
+                    </div>
+                    <div class="col-md-2">
+                        <p class="price" th:text="${item.price} + ' ₽'">0 ₽</p>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="quantity-controls">
+                            <button class="btn btn-outline-danger quantity-btn"
                                     th:attr="data-product-id=${item.product != null ? item.product.id : ''}"
-                                    onclick="removeFromCart(this.getAttribute('data-product-id'))">
-                                Удалить
+                                    onclick="updateQuantity(this.getAttribute('data-product-id'), -1)">
+                                -
+                            </button>
+                            <span th:text="${item.quantity}">0</span>
+                            <button class="btn btn-outline-primary quantity-btn"
+                                    th:attr="data-product-id=${item.product != null ? item.product.id : ''}"
+                                    onclick="updateQuantity(this.getAttribute('data-product-id'), 1)">
+                                +
                             </button>
                         </div>
                     </div>
+
+                    <div class="col-md-2">
+                        <button class="btn btn-danger"
+                                th:attr="data-product-id=${item.product != null ? item.product.id : ''}"
+                                onclick="removeFromCart(this.getAttribute('data-product-id'))">
+                            Удалить
+                        </button>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="cart-summary">
-                <div class="cart-total">
-                    Итого: <span th:text="${#aggregates.sum(cart.items.![price * quantity])} + ' ₽'">0 ₽</span>
-                </div>
-                <form th:action="@{/orders/create}" method="post">
-                    <button type="submit" class="btn btn-primary">Оформить заказ</button>
-                </form>
             </div>
         </div>
-        
-        <div th:if="${cart == null or cart.items == null or cart.items.isEmpty()}" class="empty-cart">
-            <p>Ваша корзина пуста</p>
+
+        <div class="cart-summary">
+            <div class="cart-total">
+                Итого: <span th:text="${#aggregates.sum(cart.items.![price * quantity])} + ' ₽'">0 ₽</span>
+            </div>
+            <form th:action="@{/orders/create}" method="post">
+                <button type="submit" class="btn btn-primary">Оформить заказ</button>
+            </form>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script th:inline="javascript">
-        function updateCartUI(cartSize) {
-            const cartCountElement = document.getElementById("cart-count");
-            if (cartCountElement) {
-                cartCountElement.textContent = cartSize;
-                cartCountElement.style.display = cartSize > 0 ? "block" : "none";
-            }
-        }
+    <div th:if="${cart == null or cart.items == null or cart.items.isEmpty()}" class="empty-cart">
+        <p>Ваша корзина пуста</p>
+    </div>
+</div>
 
-        function updateQuantity(productId, delta) {
-            if (!productId) return;
-            
-            const quantityElement = document.querySelector(`[data-product-id="${productId}"]`).parentElement.querySelector('span');
-            const currentQuantity = parseInt(quantityElement.textContent);
-            const newQuantity = currentQuantity + delta;
-            
-            if (newQuantity < 0) return;
-            
-            fetch('/cart/update', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    productId: productId,
-                    quantity: newQuantity
-                })
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    function updateCartUI(cartSize) {
+        const cartCountElement = document.getElementById("cart-count");
+        if (cartCountElement) {
+            cartCountElement.textContent = cartSize;
+            cartCountElement.style.display = cartSize > 0 ? "block" : "none";
+        }
+    }
+
+    function updateQuantity(productId, delta) {
+        if (!productId) return;
+
+        const quantityElement = document.querySelector(`[data-product-id="${productId}"]`).parentElement.querySelector('span');
+        const currentQuantity = parseInt(quantityElement.textContent);
+        const newQuantity = currentQuantity + delta;
+
+        if (newQuantity < 0) return;
+
+        fetch('/cart/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productId: productId,
+                quantity: newQuantity
             })
+        })
             .then(response => {
                 if (!response.ok) throw new Error('Ошибка при обновлении количества');
                 return response.json();
@@ -111,14 +115,14 @@
             .catch(error => {
                 console.error('Ошибка:', error);
             });
-        }
-        
-        function removeFromCart(productId) {
-            if (!productId) return;
-            
-            fetch(`/cart/remove?productId=${productId}`, {
-                method: 'POST'
-            })
+    }
+
+    function removeFromCart(productId) {
+        if (!productId) return;
+
+        fetch(`/cart/remove?productId=${productId}`, {
+            method: 'POST'
+        })
             .then(response => {
                 if (!response.ok) throw new Error('Ошибка при удалении товара');
                 return response.json();
@@ -133,12 +137,12 @@
                     const cartItemsContainer = document.querySelector('.cart-items');
                     const cartSummary = document.querySelector('.cart-summary');
                     const emptyCartMessage = document.querySelector('.empty-cart');
-                    
+
                     if (cartItemsContainer && cartSummary) {
                         cartItemsContainer.style.display = 'none';
                         cartSummary.style.display = 'none';
                     }
-                    
+
                     if (emptyCartMessage) {
                         emptyCartMessage.style.display = 'block';
                     } else {
@@ -147,10 +151,10 @@
                         if (mainContainer) {
                             const emptyCartDiv = document.createElement('div');
                             emptyCartDiv.className = 'empty-cart';
-                            
+
                             const message = document.createElement('p');
                             message.textContent = 'Ваша корзина пуста';
-                            
+
                             emptyCartDiv.appendChild(message);
                             mainContainer.appendChild(emptyCartDiv);
                         }
@@ -160,24 +164,43 @@
             .catch(error => {
                 console.error('Ошибка:', error);
             });
-        }
-        
-        function updateTotal(cart) {
-            const totalElement = document.querySelector('.cart-total span');
-            if (totalElement && cart && cart.items) {
-                const total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-                totalElement.textContent = `${total.toFixed(2)} ₽`;
-            }
-        }
+    }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            fetch('/cart/counter')
-                .then(response => response.json())
-                .then(count => {
-                    updateCartUI(count);
-                })
-                .catch(error => console.error('Error:', error));
-        });
-    </script>
+    function updateTotal(cart) {
+        const totalElement = document.querySelector('.cart-total span');
+        if (totalElement && cart && cart.items) {
+            const total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            totalElement.textContent = `${total.toFixed(2)} ₽`;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Получаем количество товаров в корзине
+        fetch('/cart/counter')
+            .then(response => response.json())
+            .then(count => {
+                updateCartUI(count);
+            })
+            .catch(error => console.error('Error:', error));
+
+        // Получаем баланс пользователя
+        fetch('http://localhost:8081/payments/balance')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const balanceElement = document.getElementById('userBalance');
+                balanceElement.textContent = data.amount.toFixed(2) + ' ₽';
+            })
+            .catch(error => {
+                const balanceElement = document.getElementById('userBalance');
+                balanceElement.textContent = 'баланс недоступен';
+                console.error('Error:', error);
+            });
+    });
+</script>
 </body>
 </html>

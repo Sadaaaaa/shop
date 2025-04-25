@@ -9,15 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 @Controller
@@ -26,7 +18,7 @@ import reactor.core.publisher.Mono;
 public class CartController {
     private final CartService cartService;
     private final ProductService productService;
-    private static final Long MOCK_USER = 1L; // TODO: to_reviewer: я хотел убрать в сервис, но тогда неочевидно, что пользователь должен приходить в контроллер с фронта
+    private static final Long MOCK_USER = 1L;
 
     @GetMapping
     public Mono<String> getCartPage(Model model) {
