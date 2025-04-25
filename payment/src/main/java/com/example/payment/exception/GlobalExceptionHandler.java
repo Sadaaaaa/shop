@@ -10,8 +10,8 @@ import reactor.core.publisher.Mono;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(Exception.class)
-    public Mono<ResponseEntity<String>> handleException(Exception e) {
+    @ExceptionHandler(RuntimeException.class)
+    public Mono<ResponseEntity<String>> handleException(RuntimeException e) {
         log.error("Поймал ошибку", e);
         return Mono.just(ResponseEntity.internalServerError().body("Internal Server Error: " + e.getMessage()));
     }

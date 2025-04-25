@@ -36,11 +36,9 @@ public class ProductServiceImpl implements ProductService {
         @SuppressWarnings("unchecked")
         List<Product> cachedProducts = (List<Product>) redisTemplate.opsForValue().get(PRODUCTS_LIST_KEY);
         if (cachedProducts != null) {
-            log.info("Получен список товаров из кэша Redis");
             return Flux.fromIterable(cachedProducts);
         }
 
-        log.info("Список товаров не найден в кэше Redis, загружаем из БД");
         return productRepository.findAllProducts()
                 .collectList()
                 .flatMapMany(products -> {
@@ -96,17 +94,15 @@ public class ProductServiceImpl implements ProductService {
         }
 
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, property));
-        String cacheKey = String.format("products:search:%s:page%d:size%d:sort%s",
-                search != null ? search : "all", page, size, sort != null ? sort : "default");
+        String cacheKey = String.format("products:search:%s:page%d:size%d:sort%s", 
+            search != null ? search : "all", page, size, sort != null ? sort : "default");
 
         @SuppressWarnings("unchecked")
         PageWrapper<Product> cachedPage = (PageWrapper<Product>) redisTemplate.opsForValue().get(cacheKey);
         if (cachedPage != null) {
-            log.info("Результаты поиска получены из кэша Redis");
             return Mono.just(cachedPage.toPage());
         }
 
-        log.info("Результаты поиска не найдены в кэше Redis, загружаем из БД");
         Flux<Product> products;
         if (search != null && !search.isEmpty()) {
             products = productRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(search, search);
@@ -117,6 +113,21 @@ public class ProductServiceImpl implements ProductService {
         return products
                 .collectList()
                 .map(allProducts -> {
+                    // Сортируем список в соответствии с выбранным порядком
+                    if ("price".equals(property)) {
+                        if (direction == Sort.Direction.ASC) {
+                            allProducts.sort((p1, p2) -> Double.compare(p1.getPrice(), p2.getPrice()));
+                        } else {
+                            allProducts.sort((p1, p2) -> Double.compare(p2.getPrice(), p1.getPrice()));
+                        }
+                    } else {
+                        if (direction == Sort.Direction.ASC) {
+                            allProducts.sort((p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName()));
+                        } else {
+                            allProducts.sort((p1, p2) -> p2.getName().compareToIgnoreCase(p1.getName()));
+                        }
+                    }
+                    
                     int start = (int) pageRequest.getOffset();
                     int end = Math.min((start + pageRequest.getPageSize()), allProducts.size());
                     List<Product> pageContent = allProducts.subList(start, end);
@@ -132,11 +143,9 @@ public class ProductServiceImpl implements ProductService {
         String key = PRODUCT_KEY_PREFIX + id;
         Product cachedProduct = (Product) redisTemplate.opsForValue().get(key);
         if (cachedProduct != null) {
-            log.info("Товар с ID {} получен из кэша Redis", id);
             return Mono.just(cachedProduct);
         }
 
-        log.info("Товар с ID {} не найден в кэше Redis, загружаем из БД", id);
         return productRepository.findById(id)
                 .doOnNext(product -> {
                     redisTemplate.opsForValue().set(key, product, CACHE_TTL, TimeUnit.MINUTES);
