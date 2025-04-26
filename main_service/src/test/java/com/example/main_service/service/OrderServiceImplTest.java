@@ -8,6 +8,8 @@ import com.example.main_service.repository.OrderItemRepository;
 import com.example.main_service.repository.OrderRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -26,6 +28,7 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 @Import(TestConfig.class)
 @ActiveProfiles("test")
+@ExtendWith(MockitoExtension.class)
 class OrderServiceImplTest {
 
     @MockBean
