@@ -82,7 +82,7 @@ class CartServiceImplTest {
 
         when(cartRepository.findByUserId(USER_ID)).thenReturn(Mono.empty());
         when(cartRepository.save(any(Cart.class))).thenReturn(Mono.just(newCart));
-        when(cartItemRepository.findByCartId(anyLong())).thenReturn(Flux.empty());
+        when(cartItemRepository.findByCartId(null)).thenReturn(Flux.empty());
 
         StepVerifier.create(cartService.getCart(USER_ID))
                 .expectNext(newCart)
