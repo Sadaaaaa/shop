@@ -122,34 +122,84 @@
 
         if (newQuantity < 0) return;
 
-        fetch('/cart/update', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                productId: productId,
-                quantity: newQuantity
+        if (newQuantity === 0) {
+            fetch(`/cart/decrease?productId=${productId}`, {
+                method: 'POST'
             })
-        })
-            .then(response => {
-                if (!response.ok) throw new Error('Ошибка при обновлении количества');
-                return response.json();
-            })
-            .then(cart => {
-                quantityElement.textContent = newQuantity;
-                updateTotal(cart);
-                updateCartUI(cart.items.length);
+                .then(response => {
+                    if (!response.ok) throw new Error('Ошибка при уменьшении количества');
+                    return response.json();
+                })
+                .then(cart => {
+                    const itemElement = document.querySelector(`[data-product-id="${productId}"]`).closest('.cart-item');
+                    itemElement.remove();
+                    updateTotal(cart);
+                    updateCartUI(cart.items.length);
 
-                // Обновляем состояние кнопки после изменения корзины
-                fetch('http://localhost:8081/payments/balance')
-                    .then(response => response.json())
-                    .then(data => checkBalance(data.amount))
-                    .catch(error => console.error('Error:', error));
+                    if (cart.items.length === 0) {
+                        const cartItemsContainer = document.querySelector('.cart-items');
+                        const cartSummary = document.querySelector('.cart-summary');
+                        const emptyCartMessage = document.querySelector('.empty-cart');
+
+                        if (cartItemsContainer && cartSummary) {
+                            cartItemsContainer.style.display = 'none';
+                            cartSummary.style.display = 'none';
+                        }
+
+                        if (emptyCartMessage) {
+                            emptyCartMessage.style.display = 'block';
+                        } else {
+                            const mainContainer = document.querySelector('.main-content');
+                            if (mainContainer) {
+                                const emptyCartDiv = document.createElement('div');
+                                emptyCartDiv.className = 'empty-cart';
+
+                                const message = document.createElement('p');
+                                message.textContent = 'Ваша корзина пуста';
+
+                                emptyCartDiv.appendChild(message);
+                                mainContainer.appendChild(emptyCartDiv);
+                            }
+                        }
+                    }
+
+                    fetch('http://localhost:8081/payments/balance')
+                        .then(response => response.json())
+                        .then(data => checkBalance(data.amount))
+                        .catch(error => console.error('Error:', error));
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                });
+        } else {
+            fetch('/cart/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    productId: productId,
+                    quantity: newQuantity
+                })
             })
-            .catch(error => {
-                console.error('Ошибка:', error);
-            });
+                .then(response => {
+                    if (!response.ok) throw new Error('Ошибка при обновлении количества');
+                    return response.json();
+                })
+                .then(cart => {
+                    quantityElement.textContent = newQuantity;
+                    updateTotal(cart);
+                    updateCartUI(cart.items.length);
+
+                    fetch('http://localhost:8081/payments/balance')
+                        .then(response => response.json())
+                        .then(data => checkBalance(data.amount))
+                        .catch(error => console.error('Error:', error));
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                });
+        }
     }
 
     function removeFromCart(productId) {
@@ -168,7 +218,6 @@
                 updateTotal(cart);
                 updateCartUI(cart.items.length);
 
-                // Обновляем состояние кнопки после изменения корзины
                 fetch('http://localhost:8081/payments/balance')
                     .then(response => response.json())
                     .then(data => checkBalance(data.amount))
@@ -212,7 +261,6 @@
             const total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             totalElement.textContent = `${total.toFixed(2)} ₽`;
 
-            // Обновляем состояние кнопки после изменения суммы
             fetch('http://localhost:8081/payments/balance')
                 .then(response => response.json())
                 .then(data => checkBalance(data.amount))
@@ -221,7 +269,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-        // Получаем количество товаров в корзине
         fetch('/cart/counter')
             .then(response => response.json())
             .then(count => {
@@ -229,7 +276,6 @@
             })
             .catch(error => console.error('Error:', error));
 
-        // Получаем баланс пользователя
         fetch('http://localhost:8081/payments/balance')
             .then(response => {
                 if (!response.ok) {
@@ -263,14 +309,12 @@
         checkoutButton.textContent = 'Обработка...';
         paymentErrorMessage.style.display = 'none';
 
-        // Сначала пытаемся провести платеж
         fetch('http://localhost:8081/payments/process?amount=' + total, {
             method: 'POST'
         })
         .then(response => response.json())
         .then(paymentResult => {
             if (paymentResult === true) {
-                // Если платеж прошел успешно, создаем заказ
                 return fetch('/orders/create', {
                     method: 'POST'
                 });
@@ -282,7 +326,6 @@
             if (!response.ok) {
                 throw new Error('Ошибка при создании заказа');
             }
-            // Перенаправляем на страницу заказов после успешного создания
             window.location.href = '/orders';
         })
         .catch(error => {
@@ -292,7 +335,6 @@
             checkoutButton.disabled = false;
             checkoutButton.textContent = 'Оформить заказ';
             
-            // Обновляем баланс после неудачной попытки
             fetch('http://localhost:8081/payments/balance')
                 .then(response => response.json())
                 .then(data => {

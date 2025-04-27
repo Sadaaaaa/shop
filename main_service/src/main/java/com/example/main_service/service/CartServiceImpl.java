@@ -56,6 +56,10 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public Mono<Cart> updateItemQuantity(Long userId, Long productId, int quantity) {
+        if (quantity <= 0) {
+            return removeItemFromCart(userId, productId);
+        }
+
         return getCart(userId)
                 .flatMap(cart -> cartItemRepository.findByCartId(cart.getId())
                         .filter(item -> item.getProductId().equals(productId))
