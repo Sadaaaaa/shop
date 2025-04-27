@@ -18,8 +18,9 @@ import reactor.test.StepVerifier;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CartServiceImplTest {
@@ -72,11 +73,11 @@ class CartServiceImplTest {
         when(productService.findProductById(PRODUCT_ID)).thenReturn(Mono.just(testProduct));
 
         StepVerifier.create(cartService.getCart(USER_ID))
-                .expectNextMatches(cart -> 
-                    cart.getId().equals(CART_ID) &&
-                    cart.getUserId().equals(USER_ID) &&
-                    cart.getItems().size() == 1 &&
-                    cart.getItems().get(0).getProduct().equals(testProduct))
+                .expectNextMatches(cart ->
+                        cart.getId().equals(CART_ID) &&
+                                cart.getUserId().equals(USER_ID) &&
+                                cart.getItems().size() == 1 &&
+                                cart.getItems().get(0).getProduct().equals(testProduct))
                 .verifyComplete();
     }
 
@@ -91,9 +92,9 @@ class CartServiceImplTest {
         when(cartItemRepository.findByCartId(null)).thenReturn(Flux.empty());
 
         StepVerifier.create(cartService.getCart(USER_ID))
-                .expectNextMatches(cart -> 
-                    cart.getUserId().equals(USER_ID) &&
-                    cart.getItems().isEmpty())
+                .expectNextMatches(cart ->
+                        cart.getUserId().equals(USER_ID) &&
+                                cart.getItems().isEmpty())
                 .verifyComplete();
 
         verify(cartRepository).save(any(Cart.class));

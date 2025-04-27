@@ -20,10 +20,10 @@ public class PageWrapper<T> {
 
     public static <T> PageWrapper<T> fromPage(Page<T> page) {
         return new PageWrapper<>(
-            page.getContent(),
-            page.getTotalElements(),
-            page.getNumber(),
-            page.getSize()
+                page.getContent(),
+                page.getTotalElements(),
+                page.getNumber(),
+                page.getSize()
         );
     }
 

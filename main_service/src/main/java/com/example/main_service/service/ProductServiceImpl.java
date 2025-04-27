@@ -94,8 +94,8 @@ public class ProductServiceImpl implements ProductService {
         }
 
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, property));
-        String cacheKey = String.format("products:search:%s:page%d:size%d:sort%s", 
-            search != null ? search : "all", page, size, sort != null ? sort : "default");
+        String cacheKey = String.format("products:search:%s:page%d:size%d:sort%s",
+                search != null ? search : "all", page, size, sort != null ? sort : "default");
 
         @SuppressWarnings("unchecked")
         PageWrapper<Product> cachedPage = (PageWrapper<Product>) redisTemplate.opsForValue().get(cacheKey);
@@ -126,7 +126,7 @@ public class ProductServiceImpl implements ProductService {
                             allProducts.sort((p1, p2) -> p2.getName().compareToIgnoreCase(p1.getName()));
                         }
                     }
-                    
+
                     int start = (int) pageRequest.getOffset();
                     int end = Math.min((start + pageRequest.getPageSize()), allProducts.size());
                     List<Product> pageContent = allProducts.subList(start, end);

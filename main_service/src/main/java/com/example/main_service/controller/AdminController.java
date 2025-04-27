@@ -10,7 +10,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import reactor.core.publisher.Mono;
 
 @Controller
@@ -33,20 +37,20 @@ public class AdminController {
 
     @PostMapping(value = "/products/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Mono<String> addProduct(@RequestPart("name") String name,
-                                 @RequestPart("description") String description,
-                                 @RequestPart("price") String price,
-                                 @RequestPart(value = "image", required = false) FilePart image,
-                                 Model model) {
+                                   @RequestPart("description") String description,
+                                   @RequestPart("price") String price,
+                                   @RequestPart(value = "image", required = false) FilePart image,
+                                   Model model) {
         try {
             double priceValue = Double.parseDouble(price);
-            
+
             if (image == null || image.filename().isEmpty()) {
                 Product product = Product.builder()
                         .name(name)
                         .description(description)
                         .price(priceValue)
                         .build();
-                
+
                 return productService.saveProduct(product)
                         .doOnSuccess(p -> log.info("Товар успешно сохранен: {}", p.getId()))
                         .thenReturn("redirect:/admin")
@@ -55,7 +59,7 @@ public class AdminController {
                             return Mono.just("admin/panel");
                         });
             }
-            
+
             return image.content()
                     .collectList()
                     .flatMap(dataBuffers -> {
@@ -67,7 +71,7 @@ public class AdminController {
                                     .build();
                             return productService.saveProduct(product);
                         }
-                        
+
                         int totalBytes = dataBuffers.stream()
                                 .mapToInt(DataBuffer::readableByteCount)
                                 .sum();

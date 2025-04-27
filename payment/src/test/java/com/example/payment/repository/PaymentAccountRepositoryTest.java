@@ -43,16 +43,16 @@ class PaymentAccountRepositoryTest {
     @Test
     void findByUserId_WhenAccountExists_ShouldReturnAccount() {
         StepVerifier.create(paymentAccountRepository.findByUserId(USER_ID))
-                .expectNextMatches(account -> 
-                    account.getUserId().equals(USER_ID) &&
-                    account.getAmount().equals(INITIAL_AMOUNT))
+                .expectNextMatches(account ->
+                        account.getUserId().equals(USER_ID) &&
+                                account.getAmount().equals(INITIAL_AMOUNT))
                 .verifyComplete();
     }
 
     @Test
     void findByUserId_WhenAccountDoesNotExist_ShouldReturnEmpty() {
         Long nonExistentUserId = 999L;
-        
+
         StepVerifier.create(paymentAccountRepository.findByUserId(nonExistentUserId))
                 .verifyComplete();
     }
@@ -60,17 +60,17 @@ class PaymentAccountRepositoryTest {
     @Test
     void save_ShouldUpdateAccount() {
         double newAmount = 500.0;
-        
+
         Mono<PaymentAccount> updateOperation = paymentAccountRepository.findByUserId(USER_ID)
                 .flatMap(account -> {
                     account.setAmount(newAmount);
                     return paymentAccountRepository.save(account);
                 });
-                
+
         StepVerifier.create(updateOperation)
                 .expectNextMatches(account -> account.getAmount().equals(newAmount))
                 .verifyComplete();
-                
+
         StepVerifier.create(paymentAccountRepository.findByUserId(USER_ID))
                 .expectNextMatches(account -> account.getAmount().equals(newAmount))
                 .verifyComplete();

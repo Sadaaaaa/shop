@@ -11,16 +11,16 @@ import org.springframework.data.relational.core.mapping.Table;
 public class OrderItem {
     @Id
     private Long id;
-    
+
     @Column("order_id")
     private Long orderId;
-    
+
     @Column("product_id")
     private Long productId;
-    
+
     private Integer quantity;
     private Double price;
-    
+
     @Transient
     private Product product;
 

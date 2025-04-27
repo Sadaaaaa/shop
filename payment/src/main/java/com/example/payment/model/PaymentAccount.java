@@ -10,9 +10,9 @@ import org.springframework.data.relational.core.mapping.Table;
 public class PaymentAccount {
     @Id
     private Long id;
-    
+
     @Column("user_id")
     private Long userId;
-    
+
     private Double amount;
 } 

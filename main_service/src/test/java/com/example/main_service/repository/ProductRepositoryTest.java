@@ -6,12 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.r2dbc.DataR2dbcTest;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-
-import java.util.Arrays;
-import java.util.List;
 
 @DataR2dbcTest
 class ProductRepositoryTest {
@@ -59,36 +55,36 @@ class ProductRepositoryTest {
     @Test
     void findByNameContainingIgnoreCase_ShouldReturnMatchingProducts() {
         StepVerifier.create(productRepository.findByNameContainingIgnoreCase("iPhone"))
-                .expectNextMatches(product -> 
-                    product.getName().equals("iPhone 13") &&
-                    product.getPrice() == 999.99)
+                .expectNextMatches(product ->
+                        product.getName().equals("iPhone 13") &&
+                                product.getPrice() == 999.99)
                 .verifyComplete();
     }
 
     @Test
     void findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase_ShouldReturnMatchingProducts() {
         StepVerifier.create(productRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase("Samsung", "Samsung"))
-                .expectNextMatches(product -> 
-                    product.getName().equals("Samsung Galaxy") &&
-                    product.getDescription().contains("Samsung"))
+                .expectNextMatches(product ->
+                        product.getName().equals("Samsung Galaxy") &&
+                                product.getDescription().contains("Samsung"))
                 .verifyComplete();
     }
 
     @Test
     void findByPriceBetween_ShouldReturnProductsInPriceRange() {
         StepVerifier.create(productRepository.findByPriceBetween(800.0, 900.0))
-                .expectNextMatches(product -> 
-                    product.getName().equals("Samsung Galaxy") &&
-                    product.getPrice() == 899.99)
+                .expectNextMatches(product ->
+                        product.getName().equals("Samsung Galaxy") &&
+                                product.getPrice() == 899.99)
                 .verifyComplete();
     }
 
     @Test
     void findWithFilters_ShouldReturnFilteredProducts() {
         StepVerifier.create(productRepository.findWithFilters("Samsung", 800.0, 1000.0))
-                .expectNextMatches(product -> 
-                    product.getName().equals("Samsung Galaxy") &&
-                    product.getPrice() == 899.99)
+                .expectNextMatches(product ->
+                        product.getName().equals("Samsung Galaxy") &&
+                                product.getPrice() == 899.99)
                 .verifyComplete();
     }
 
@@ -115,18 +111,18 @@ class ProductRepositoryTest {
                 .build();
 
         StepVerifier.create(productRepository.save(newProduct))
-                .expectNextMatches(saved -> 
-                    saved.getId() != null &&
-                    saved.getName().equals("New Product") &&
-                    saved.getPrice() == 199.99)
+                .expectNextMatches(saved ->
+                        saved.getId() != null &&
+                                saved.getName().equals("New Product") &&
+                                saved.getPrice() == 199.99)
                 .verifyComplete();
     }
 
     @Test
     void findById_ShouldReturnProduct() {
         StepVerifier.create(productRepository.findAllProducts()
-                .next()
-                .flatMap(product -> productRepository.findById(product.getId())))
+                        .next()
+                        .flatMap(product -> productRepository.findById(product.getId())))
                 .expectNextMatches(found -> found.getId() != null)
                 .verifyComplete();
     }
@@ -134,9 +130,9 @@ class ProductRepositoryTest {
     @Test
     void deleteById_ShouldDeleteProduct() {
         StepVerifier.create(productRepository.findAllProducts()
-                .next()
-                .flatMap(product -> productRepository.deleteById(product.getId())
-                        .then(productRepository.findById(product.getId()))))
+                        .next()
+                        .flatMap(product -> productRepository.deleteById(product.getId())
+                                .then(productRepository.findById(product.getId()))))
                 .verifyComplete();
     }
 } 

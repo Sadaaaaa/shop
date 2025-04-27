@@ -11,8 +11,6 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -59,26 +57,26 @@ class PaymentServiceTest {
     void processPayment_WhenAccountExistsAndHasSufficientFunds_ShouldProcessPayment() {
         Double paymentAmount = 500.0;
         Double expectedRemainingAmount = INITIAL_AMOUNT - paymentAmount;
-        
+
         PaymentAccount updatedAccount = new PaymentAccount();
         updatedAccount.setId(1L);
         updatedAccount.setUserId(USER_ID);
         updatedAccount.setAmount(expectedRemainingAmount);
-        
+
         when(paymentAccountRepository.findByUserId(USER_ID)).thenReturn(Mono.just(testAccount));
         when(paymentAccountRepository.save(any(PaymentAccount.class))).thenReturn(Mono.just(updatedAccount));
 
         StepVerifier.create(paymentService.processPayment(USER_ID, paymentAmount))
                 .expectNext(true)
                 .verifyComplete();
-        
+
         verify(paymentAccountRepository).save(any(PaymentAccount.class));
     }
 
     @Test
     void processPayment_WhenAccountExistsButHasInsufficientFunds_ShouldReturnError() {
         Double paymentAmount = 1500.0;
-        
+
         when(paymentAccountRepository.findByUserId(USER_ID)).thenReturn(Mono.just(testAccount));
 
         StepVerifier.create(paymentService.processPayment(USER_ID, paymentAmount))
@@ -89,7 +87,7 @@ class PaymentServiceTest {
     @Test
     void processPayment_WhenAccountDoesNotExist_ShouldReturnError() {
         Double paymentAmount = 500.0;
-        
+
         when(paymentAccountRepository.findByUserId(USER_ID)).thenReturn(Mono.empty());
 
         StepVerifier.create(paymentService.processPayment(USER_ID, paymentAmount))
