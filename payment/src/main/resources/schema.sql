@@ -1,0 +1,7 @@
+DROP TABLE IF EXISTS payment_account CASCADE;
+
+CREATE TABLE IF NOT EXISTS payment_account (
+    id SERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL UNIQUE,
+    amount DECIMAL(19,2) NOT NULL DEFAULT 0.00
+);

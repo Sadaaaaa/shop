@@ -1,0 +1,74 @@
+openapi: 3.0.3
+info:
+  title: Payment Service API
+  description: API для сервиса платежей
+  version: 1.0.0
+servers:
+  - url: http://localhost:8082
+    description: Payment Service
+paths:
+  /payments/balance:
+    get:
+      operationId: getBalance
+      summary: Получить текущий баланс
+      responses:
+        '200':
+          description: Успешное получение баланса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Balance'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /payments/process:
+    post:
+      operationId: processPayment
+      summary: Обработать платеж
+      parameters:
+        - name: amount
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+      responses:
+        '200':
+          description: Успешная обработка платежа
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '400':
+          description: Недостаточно средств или некорректная сумма
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Balance:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: double
+          description: Текущий баланс
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Код ошибки
+        message:
+          type: string
+          description: Описание ошибки 
