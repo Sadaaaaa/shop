@@ -2,7 +2,7 @@
 
 ## Overview
 
-SHOP APP is a reactive application for managing purchases efficiently. It offers flexible deployment options using either Docker or Maven to suit your development and production needs.
+SHOP APP is a reactive application with Redis cache for managing purchases efficiently. It offers flexible deployment options using either Docker or Maven to suit your development and production needs.
 
 ## Requirements
 
@@ -30,14 +30,16 @@ docker-compose up
 ```
 
 This will:
-- Build the SHOP APP application image
-- Start the application container
+- Build two images: `main_service` and `payment`
+- Start the application containers
 - Set up and initialize the database
+- Set up and initialize the Redis cache
 - Configure networking between containers
 
 The application will be available at [http://localhost:8080](http://localhost:8080).
 
 The database will be accessible on port 5432.
+The Redis cache will be accessible on port 6379.
 
 ### Step 4: Stop the Containers
 
@@ -57,7 +59,11 @@ Extract the application archive to your desired location.
 
 Ensure you have PostgreSQL running on port 5432 with a database named `shop_db` already created.
 
-### Step 3: Build and Run the Application
+### Step 3: Redis Setup
+
+Ensure you have Redis running on port 6379.
+
+### Step 4: Build and Run the Application
 
 Make sure Maven and JDK 21 are installed, then execute:
 
