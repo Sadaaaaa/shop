@@ -60,13 +60,11 @@ class ProductControllerTest {
 
     @Test
     void showProducts_ShouldReturnProductsPage() {
-        // Arrange
         when(productService.findProductsByNameOrDescription(anyString(), anyInt(), anyInt(), anyString()))
                 .thenReturn(Mono.just(testPage));
         when(cartService.getCart(anyLong())).thenReturn(Mono.just(testCart));
         when(model.addAttribute(anyString(), any())).thenReturn(model);
 
-        // Act & Assert
         StepVerifier.create(productController.showProducts(0, 10, "name", "test", model))
                 .expectNext("products")
                 .verifyComplete();
@@ -80,12 +78,10 @@ class ProductControllerTest {
 
     @Test
     void viewProduct_ShouldReturnProductPage() {
-        // Arrange
         when(productService.findProductById(anyLong())).thenReturn(Mono.just(testProduct));
         when(cartService.getCart(anyLong())).thenReturn(Mono.just(testCart));
         when(model.addAttribute(anyString(), any())).thenReturn(model);
 
-        // Act & Assert
         StepVerifier.create(productController.viewProduct(1L, model))
                 .expectNext("item")
                 .verifyComplete();
@@ -96,12 +92,10 @@ class ProductControllerTest {
 
     @Test
     void getProductImage_ShouldReturnImage() {
-        // Arrange
         byte[] testBytes = "test image".getBytes();
         ByteBuffer testBuffer = ByteBuffer.wrap(testBytes);
         when(productService.findProductImageById(anyLong())).thenReturn(Mono.just(testBuffer));
 
-        // Act & Assert
         StepVerifier.create(productController.getProductImage(1L))
                 .assertNext(response -> {
                     assertEquals(MediaType.IMAGE_JPEG, response.getHeaders().getContentType());
@@ -112,10 +106,8 @@ class ProductControllerTest {
 
     @Test
     void getProductImage_ShouldReturnNotFound_WhenImageNotExists() {
-        // Arrange
         when(productService.findProductImageById(anyLong())).thenReturn(Mono.empty());
 
-        // Act & Assert
         StepVerifier.create(productController.getProductImage(1L))
                 .assertNext(response -> {
                     assertEquals(404, response.getStatusCodeValue());

@@ -28,7 +28,6 @@ class ProductRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        // Очищаем таблицу перед каждым тестом
         template.<Product>delete(Product.class).all()
                 .then(Mono.defer(() -> {
                     product1 = Product.builder()

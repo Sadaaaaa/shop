@@ -130,7 +130,6 @@ class CartControllerTest {
 
     @Test
     void decreaseItems_ShouldDecreaseQuantity() {
-        // Arrange
         CartItem item = new CartItem();
         item.setProductId(1L);
         item.setQuantity(2);
@@ -144,7 +143,6 @@ class CartControllerTest {
         when(cartService.getCart(anyLong())).thenReturn(Mono.just(cart));
         when(cartService.updateItemQuantity(anyLong(), anyLong(), eq(1))).thenReturn(Mono.just(cart));
 
-        // Act & Assert
         StepVerifier.create(cartController.decreaseItems(1L))
                 .expectNext(cart)
                 .verifyComplete();
@@ -155,7 +153,6 @@ class CartControllerTest {
 
     @Test
     void decreaseItems_ShouldRemoveItem_WhenQuantityIsOne() {
-        // Arrange
         CartItem item = new CartItem();
         item.setProductId(1L);
         item.setQuantity(1);
@@ -174,7 +171,6 @@ class CartControllerTest {
         when(cartService.getCart(anyLong())).thenReturn(Mono.just(cart));
         when(cartService.removeItemFromCart(anyLong(), anyLong())).thenReturn(Mono.just(emptyCart));
 
-        // Act & Assert
         StepVerifier.create(cartController.decreaseItems(1L))
                 .expectNext(emptyCart)
                 .verifyComplete();
@@ -192,7 +188,6 @@ class CartControllerTest {
 
     @Test
     void decreaseItems_ShouldThrowException_WhenItemNotFound() {
-        // Arrange
         Cart emptyCart = new Cart();
         emptyCart.setId(1L);
         emptyCart.setUserId(1L);
@@ -200,7 +195,6 @@ class CartControllerTest {
 
         when(cartService.getCart(anyLong())).thenReturn(Mono.just(emptyCart));
 
-        // Act & Assert
         StepVerifier.create(cartController.decreaseItems(1L))
                 .expectError(IllegalArgumentException.class)
                 .verify();

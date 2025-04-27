@@ -113,7 +113,6 @@ public class ProductServiceImpl implements ProductService {
         return products
                 .collectList()
                 .map(allProducts -> {
-                    // Сортируем список в соответствии с выбранным порядком
                     if ("price".equals(property)) {
                         if (direction == Sort.Direction.ASC) {
                             allProducts.sort((p1, p2) -> Double.compare(p1.getPrice(), p2.getPrice()));
