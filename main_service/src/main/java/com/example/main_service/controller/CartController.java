@@ -5,10 +5,13 @@ import com.example.main_service.model.Cart;
 import com.example.main_service.model.CartItem;
 import com.example.main_service.service.CartService;
 import com.example.main_service.service.ProductService;
+import jakarta.validation.constraints.NotNull;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import reactor.core.publisher.Mono;
 
+@Validated
 @Controller
 @RequestMapping("/cart")
 @RequiredArgsConstructor
@@ -51,20 +55,13 @@ public class CartController {
 
     @GetMapping("/count")
     @ResponseBody
-    public Mono<Integer> getProductsCounter(@RequestParam Long productId) {
-        if (productId == null) {
-            return Mono.error(new IllegalArgumentException("Product ID is required"));
-        }
+    public Mono<Integer> getProductsCounter(@RequestParam @NotNull Long productId) {
         return cartService.getProductsCounter(MOCK_USER, productId);
     }
 
     @PostMapping("/add")
     @ResponseBody
-    public Mono<Cart> addToCart(@RequestParam Long productId) {
-        if (productId == null) {
-            return Mono.error(new IllegalArgumentException("Product ID is required"));
-        }
-
+    public Mono<Cart> addToCart(@RequestParam @NotNull Long productId) {
         return cartService.getCart(MOCK_USER)
                 .flatMap(cart -> {
                     CartItem existingItem = cart.getItems().stream()
@@ -89,10 +86,7 @@ public class CartController {
 
     @PostMapping("/decrease")
     @ResponseBody
-    public Mono<Cart> decreaseItems(@RequestParam Long productId) {
-        if (productId == null) {
-            return Mono.error(new IllegalArgumentException("Product ID is required"));
-        }
+    public Mono<Cart> decreaseItems(@RequestParam @NotNull Long productId) {
         return cartService.getCart(MOCK_USER)
                 .flatMap(cart -> {
                     CartItem item = cart.getItems().stream()
@@ -111,22 +105,17 @@ public class CartController {
 
     @PostMapping("/remove")
     @ResponseBody
-    public Mono<Cart> removeFromCart(@RequestParam Long productId) {
-        if (productId == null) {
-            return Mono.error(new IllegalArgumentException("Product ID is required"));
-        }
+    public Mono<Cart> removeFromCart(@RequestParam @NotNull Long productId) {
         return cartService.removeItemFromCart(MOCK_USER, productId);
     }
 
     @PostMapping("/update")
     @ResponseBody
     public Mono<Cart> updateQuantity(@RequestBody UpdateQuantityRequest request) {
-        if (request.productId() == null) {
-            return Mono.error(new IllegalArgumentException("Product ID is required"));
+        if (request.productId() == null || request.quantity() == null) {
+            return Mono.error(new IllegalArgumentException("Wrong request!"));
         }
-        if (request.quantity() == null) {
-            return Mono.error(new IllegalArgumentException("Quantity is required"));
-        }
+
         return cartService.updateItemQuantity(MOCK_USER, request.productId(), request.quantity());
     }
 
@@ -137,13 +126,13 @@ public class CartController {
     }
 
     @DeleteMapping("/items/{productId}")
-    public Mono<ResponseEntity<Cart>> removeItemFromCart(@PathVariable Long productId) {
+    public Mono<ResponseEntity<Cart>> removeItemFromCart(@PathVariable @NonNull Long productId) {
         return cartService.removeItemFromCart(MOCK_USER, productId)
                 .map(ResponseEntity::ok);
     }
 
     @PutMapping("/items/{productId}/quantity")
-    public Mono<ResponseEntity<Cart>> updateItemQuantity(@PathVariable Long productId,
+    public Mono<ResponseEntity<Cart>> updateItemQuantity(@PathVariable @NonNull Long productId,
                                                          @RequestParam int quantity) {
         return cartService.updateItemQuantity(MOCK_USER, productId, quantity)
                 .map(ResponseEntity::ok);

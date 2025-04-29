@@ -2,6 +2,7 @@ package com.example.main_service.controller;
 
 import com.example.main_service.model.Product;
 import com.example.main_service.service.ProductService;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -10,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import reactor.core.publisher.Mono;
 
+@Validated
 @Controller
 @RequestMapping("/admin")
 @RequiredArgsConstructor
@@ -106,7 +109,7 @@ public class AdminController {
     }
 
     @PostMapping(value = "/products/delete/{id}", produces = MediaType.TEXT_HTML_VALUE + ";charset=UTF-8")
-    public Mono<String> deleteProduct(@PathVariable Long id, Model model) {
+    public Mono<String> deleteProduct(@PathVariable @NotNull Long id, Model model) {
         return productService.deleteProduct(id)
                 .doOnSuccess(v -> log.info("Товар успешно удален: {}", id))
                 .thenReturn("redirect:/admin")
