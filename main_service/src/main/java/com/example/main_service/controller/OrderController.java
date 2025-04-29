@@ -3,10 +3,12 @@ package com.example.main_service.controller;
 import com.example.main_service.model.OrderItem;
 import com.example.main_service.service.CartService;
 import com.example.main_service.service.OrderService;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +20,7 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.List;
 
+@Validated
 @Controller
 @RequestMapping("/orders")
 @RequiredArgsConstructor
@@ -38,7 +41,7 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    public Mono<String> viewOrder(@PathVariable Long id, Model model) {
+    public Mono<String> viewOrder(@PathVariable @NotNull Long id, Model model) {
         return orderService.getOrderById(MOCK_USER_ID, id)
                 .map(order -> {
                     model.addAttribute("order", order);

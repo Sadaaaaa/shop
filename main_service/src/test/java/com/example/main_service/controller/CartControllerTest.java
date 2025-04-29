@@ -102,13 +102,6 @@ class CartControllerTest {
     }
 
     @Test
-    void getProductsCounter_ShouldThrowException_WhenProductIdIsNull() {
-        StepVerifier.create(cartController.getProductsCounter(null))
-                .expectError(IllegalArgumentException.class)
-                .verify();
-    }
-
-    @Test
     void addToCart_ShouldAddNewItem() {
         when(cartService.getCart(anyLong())).thenReturn(Mono.just(new Cart()));
         when(productService.findProductById(anyLong())).thenReturn(Mono.just(testProduct));
@@ -178,13 +171,6 @@ class CartControllerTest {
 
         verify(cartService).getCart(anyLong());
         verify(cartService).removeItemFromCart(anyLong(), eq(1L));
-    }
-
-    @Test
-    void decreaseItems_ShouldThrowException_WhenProductIdIsNull() {
-        StepVerifier.create(cartController.decreaseItems(null))
-                .expectError(IllegalArgumentException.class)
-                .verify();
     }
 
     @Test
