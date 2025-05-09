@@ -1,3 +1,8 @@
+-- Insert test user (password is 'password' encoded with BCrypt)
+INSERT INTO users (username, password, role)
+VALUES ('user', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.AQubh4a', 'USER')
+ON CONFLICT (username) DO NOTHING;
+
 INSERT INTO products (name, description, price, image) VALUES
 ('Смартфон Galaxy S21', 'Флагманский смартфон Samsung с отличной камерой', 799.99, null),
 ('Ноутбук MacBook Pro', '13-дюймовый ноутбук с M1 чипом', 1299.99, null),
