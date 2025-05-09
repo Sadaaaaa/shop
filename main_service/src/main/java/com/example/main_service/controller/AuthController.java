@@ -27,20 +27,32 @@ public class AuthController {
         }
         
         // Проверяем параметры запроса
-        exchange.getRequest().getQueryParams().forEach((key, values) -> {
-            if (!values.isEmpty()) {
-                model.addAttribute(key, true);
-            }
-        });
+        var params = exchange.getRequest().getQueryParams();
+        if (params.containsKey("error")) {
+            model.addAttribute("error", true);
+        }
+        if (params.containsKey("logout")) {
+            model.addAttribute("logout", true);
+        }
+        if (params.containsKey("registered")) {
+            model.addAttribute("registered", true);
+        }
         
         return "login";
     }
 
     @GetMapping("/register")
-    public Mono<String> registerPage(Model model, Authentication authentication) {
+    public Mono<String> registerPage(ServerWebExchange exchange, Model model, Authentication authentication) {
         if (authentication != null && authentication.isAuthenticated()) {
             return Mono.just("redirect:/");
         }
+        
+        // Получаем параметр error из запроса и добавляем его в модель
+        String error = exchange.getRequest().getQueryParams().getFirst("error");
+        if (error != null) {
+            model.addAttribute("error", error);
+        }
+        
         return Mono.just("register");
     }
 

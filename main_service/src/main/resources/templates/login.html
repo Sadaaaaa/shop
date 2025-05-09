@@ -15,13 +15,13 @@
                         <h3 class="text-center">Вход в систему</h3>
                     </div>
                     <div class="card-body">
-                        <div th:if="${param.error != null}" class="alert alert-danger">
+                        <div th:if="${error}" class="alert alert-danger">
                             Неверное имя пользователя или пароль
                         </div>
-                        <div th:if="${param.logout != null}" class="alert alert-success">
+                        <div th:if="${logout}" class="alert alert-success">
                             Вы успешно вышли из системы
                         </div>
-                        <div th:if="${param.registered != null}" class="alert alert-success">
+                        <div th:if="${registered}" class="alert alert-success">
                             Регистрация успешна! Теперь вы можете войти
                         </div>
                         <form th:action="@{/login}" method="post" autocomplete="off">
