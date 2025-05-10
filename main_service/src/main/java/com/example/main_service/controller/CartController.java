@@ -5,9 +5,11 @@ import com.example.main_service.model.Cart;
 import com.example.main_service.model.CartItem;
 import com.example.main_service.service.CartService;
 import com.example.main_service.service.ProductService;
+import com.example.main_service.service.UserService;
 import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Validated
 @Controller
 @RequestMapping("/cart")
@@ -30,11 +33,12 @@ import reactor.core.publisher.Mono;
 public class CartController {
     private final CartService cartService;
     private final ProductService productService;
-    private static final Long MOCK_USER = 1L;
+    private final UserService userService;
 
     @GetMapping
     public Mono<String> getCartPage(Model model) {
-        return cartService.getCart(MOCK_USER)
+        return userService.getUserIdFromSecurityContext()
+                .flatMap(userId -> cartService.getCart(userId))
                 .map(cart -> {
                     model.addAttribute("cart", cart);
                     return "cart";
@@ -44,25 +48,29 @@ public class CartController {
     @GetMapping("/api")
     @ResponseBody
     public Mono<Cart> getCart() {
-        return cartService.getCart(MOCK_USER);
+        return userService.getUserIdFromSecurityContext()
+                .flatMap(userId -> cartService.getCart(userId));
     }
 
     @GetMapping("/counter")
     @ResponseBody
     public Mono<Integer> getCartCounter() {
-        return cartService.getCartCounter(MOCK_USER);
+        return userService.getUserIdFromSecurityContext()
+                .flatMap(userId -> cartService.getCartCounter(userId));
     }
 
     @GetMapping("/count")
     @ResponseBody
     public Mono<Integer> getProductsCounter(@RequestParam @NotNull Long productId) {
-        return cartService.getProductsCounter(MOCK_USER, productId);
+        return userService.getUserIdFromSecurityContext()
+                .flatMap(userId -> cartService.getProductsCounter(userId, productId));
     }
 
     @PostMapping("/add")
     @ResponseBody
     public Mono<Cart> addToCart(@RequestParam @NotNull Long productId) {
-        return cartService.getCart(MOCK_USER)
+        return userService.getUserIdFromSecurityContext()
+                .flatMap(userId -> cartService.getCart(userId)
                 .flatMap(cart -> {
                     CartItem existingItem = cart.getItems().stream()
                             .filter(item -> item.getProductId().equals(productId))
@@ -70,7 +78,7 @@ public class CartController {
                             .orElse(null);
 
                     if (existingItem != null) {
-                        return cartService.updateItemQuantity(MOCK_USER, productId, existingItem.getQuantity() + 1);
+                        return cartService.updateItemQuantity(userId, productId, existingItem.getQuantity() + 1);
                     } else {
                         return productService.findProductById(productId)
                                 .flatMap(product -> {
@@ -78,16 +86,17 @@ public class CartController {
                                     item.setProductId(productId);
                                     item.setQuantity(1);
                                     item.setPrice(product.getPrice());
-                                    return cartService.addItemToCart(MOCK_USER, item);
+                                    return cartService.addItemToCart(userId, item);
                                 });
                     }
-                });
+                }));
     }
 
     @PostMapping("/decrease")
     @ResponseBody
     public Mono<Cart> decreaseItems(@RequestParam @NotNull Long productId) {
-        return cartService.getCart(MOCK_USER)
+        return userService.getUserIdFromSecurityContext()
+                .flatMap(userId -> cartService.getCart(userId)
                 .flatMap(cart -> {
                     CartItem item = cart.getItems().stream()
                             .filter(i -> i.getProductId().equals(productId))
@@ -96,17 +105,18 @@ public class CartController {
 
                     if (item.getQuantity() > 1) {
                         item.setQuantity(item.getQuantity() - 1);
-                        return cartService.updateItemQuantity(MOCK_USER, productId, item.getQuantity());
+                        return cartService.updateItemQuantity(userId, productId, item.getQuantity());
                     } else {
-                        return cartService.removeItemFromCart(MOCK_USER, productId);
+                        return cartService.removeItemFromCart(userId, productId);
                     }
-                });
+                }));
     }
 
     @PostMapping("/remove")
     @ResponseBody
     public Mono<Cart> removeFromCart(@RequestParam @NotNull Long productId) {
-        return cartService.removeItemFromCart(MOCK_USER, productId);
+        return userService.getUserIdFromSecurityContext()
+                .flatMap(userId -> cartService.removeItemFromCart(userId, productId));
     }
 
     @PostMapping("/update")
@@ -116,31 +126,36 @@ public class CartController {
             return Mono.error(new IllegalArgumentException("Wrong request!"));
         }
 
-        return cartService.updateItemQuantity(MOCK_USER, request.productId(), request.quantity());
+        return userService.getUserIdFromSecurityContext()
+                .flatMap(userId -> cartService.updateItemQuantity(userId, request.productId(), request.quantity()));
     }
 
     @PostMapping("/items")
     public Mono<ResponseEntity<Cart>> addItemToCart(@RequestBody CartItem item) {
-        return cartService.addItemToCart(MOCK_USER, item)
+        return userService.getUserIdFromSecurityContext()
+                .flatMap(userId -> cartService.addItemToCart(userId, item))
                 .map(ResponseEntity::ok);
     }
 
     @DeleteMapping("/items/{productId}")
     public Mono<ResponseEntity<Cart>> removeItemFromCart(@PathVariable @NonNull Long productId) {
-        return cartService.removeItemFromCart(MOCK_USER, productId)
+        return userService.getUserIdFromSecurityContext()
+                .flatMap(userId -> cartService.removeItemFromCart(userId, productId))
                 .map(ResponseEntity::ok);
     }
 
     @PutMapping("/items/{productId}/quantity")
     public Mono<ResponseEntity<Cart>> updateItemQuantity(@PathVariable @NonNull Long productId,
                                                          @RequestParam int quantity) {
-        return cartService.updateItemQuantity(MOCK_USER, productId, quantity)
+        return userService.getUserIdFromSecurityContext()
+                .flatMap(userId -> cartService.updateItemQuantity(userId, productId, quantity))
                 .map(ResponseEntity::ok);
     }
 
     @DeleteMapping
     public Mono<ResponseEntity<Void>> clearCart() {
-        return cartService.clearCart(MOCK_USER)
+        return userService.getUserIdFromSecurityContext()
+                .flatMap(userId -> cartService.clearCart(userId))
                 .then(Mono.just(ResponseEntity.ok().build()));
     }
 }

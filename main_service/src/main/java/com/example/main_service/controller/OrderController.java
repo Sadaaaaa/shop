@@ -3,8 +3,10 @@ package com.example.main_service.controller;
 import com.example.main_service.model.OrderItem;
 import com.example.main_service.service.CartService;
 import com.example.main_service.service.OrderService;
+import com.example.main_service.service.UserService;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,39 +22,43 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Validated
 @Controller
 @RequestMapping("/orders")
 @RequiredArgsConstructor
 public class OrderController {
 
-    private static final Long MOCK_USER_ID = 1L;
     private final OrderService orderService;
     private final CartService cartService;
+    private final UserService userService;
 
     @GetMapping
     public Mono<String> listOrders(Model model) {
-        return orderService.getAllOrders(MOCK_USER_ID)
+        return userService.getUserIdFromSecurityContext()
+                .flatMap(userId -> orderService.getAllOrders(userId)
                 .collectList()
                 .map(orders -> {
                     model.addAttribute("orders", orders);
                     return "orders";
-                });
+                }));
     }
 
     @GetMapping("/{id}")
     public Mono<String> viewOrder(@PathVariable @NotNull Long id, Model model) {
-        return orderService.getOrderById(MOCK_USER_ID, id)
+        return userService.getUserIdFromSecurityContext()
+                .flatMap(userId -> orderService.getOrderById(userId, id)
                 .map(order -> {
                     model.addAttribute("order", order);
                     return "order";
                 })
-                .switchIfEmpty(Mono.error(new RuntimeException("Order not found")));
+                .switchIfEmpty(Mono.error(new RuntimeException("Order not found"))));
     }
 
     @PostMapping("/create")
     public Mono<String> createOrder() {
-        return cartService.getCart(MOCK_USER_ID)
+        return userService.getUserIdFromSecurityContext()
+                .flatMap(userId -> cartService.getCart(userId)
                 .flatMap(cart -> {
                     List<OrderItem> orderItems = new ArrayList<>();
                     cart.getItems().forEach(cartItem -> {
@@ -63,16 +69,16 @@ public class OrderController {
                         orderItems.add(orderItem);
                     });
 
-                    return orderService.createOrder(MOCK_USER_ID, orderItems)
+                    return orderService.createOrder(userId, orderItems)
                             .flatMap(order -> {
                                 List<Mono<Void>> removeOperations = new ArrayList<>();
                                 cart.getItems().forEach(item ->
-                                        removeOperations.add(cartService.removeItemFromCart(MOCK_USER_ID, item.getProductId()).then())
+                                        removeOperations.add(cartService.removeItemFromCart(userId, item.getProductId()).then())
                                 );
                                 return Mono.when(removeOperations)
                                         .thenReturn("redirect:/orders/" + order.getId());
                             });
-                });
+                }));
     }
 
     @ExceptionHandler(RuntimeException.class)

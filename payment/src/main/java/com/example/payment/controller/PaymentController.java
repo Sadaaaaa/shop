@@ -14,15 +14,13 @@ import reactor.core.publisher.Mono;
 public class PaymentController implements DefaultApi {
     private final PaymentService paymentService;
 
-    private static final Long MOCK_USER = 1L;
-
     public PaymentController(PaymentService paymentService) {
         this.paymentService = paymentService;
     }
 
     @Override
-    public Mono<ResponseEntity<Balance>> getBalance(ServerWebExchange exchange) {
-        return paymentService.getBalance(MOCK_USER)
+    public Mono<ResponseEntity<Balance>> getBalance(Long userId, ServerWebExchange exchange) {
+        return paymentService.getBalance(userId)
                 .map(account -> {
                     Balance balance = new Balance();
                     balance.setAmount(account.getAmount());
@@ -36,8 +34,8 @@ public class PaymentController implements DefaultApi {
     }
 
     @Override
-    public Mono<ResponseEntity<Boolean>> processPayment(Double amount, ServerWebExchange exchange) {
-        return paymentService.processPayment(MOCK_USER, amount)
+    public Mono<ResponseEntity<Boolean>> processPayment(Double amount, Long userId, ServerWebExchange exchange) {
+        return paymentService.processPayment(userId, amount)
                 .map(ResponseEntity::ok)
                 .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().body(false)));
     }
