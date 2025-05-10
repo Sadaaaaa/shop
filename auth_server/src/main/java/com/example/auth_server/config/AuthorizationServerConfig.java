@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
@@ -32,6 +33,12 @@ import java.util.UUID;
 @Configuration
 public class AuthorizationServerConfig {
 
+    private final PasswordEncoder passwordEncoder;
+
+    public AuthorizationServerConfig(PasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
+    }
+
     @Bean
     @Order(1)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -47,46 +54,18 @@ public class AuthorizationServerConfig {
 
     @Bean
     public RegisteredClientRepository registeredClientRepository() {
-        // Клиент для тестирования
-        RegisteredClient client = RegisteredClient.withId(UUID.randomUUID().toString())
-            .clientId("client")
-            .clientSecret("{noop}secret")
+        // Клиент для shop-client (используется main-service для обращения к payment-service)
+        RegisteredClient shopClient = RegisteredClient.withId("shop-client-id")
+            .clientId("shop-client")
+            .clientSecret(passwordEncoder.encode("shop-secret")) // Шифруем пароль с помощью PasswordEncoder
             .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
             .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-            .redirectUri("http://127.0.0.1:8080/login/oauth2/code/client")
-            .scope(OidcScopes.OPENID)
-            .scope("read")
-            .scope("write")
+            .scope("payment.read")
+            .scope("payment.write")
             .build();
 
-        // Клиент для main-service
-        RegisteredClient mainClient = RegisteredClient.withId(UUID.randomUUID().toString())
-            .clientId("main-client")
-            .clientSecret("{noop}main-secret")
-            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-            .redirectUri("http://localhost:8080/login/oauth2/code/auth-server")
-            .scope(OidcScopes.OPENID)
-            .scope("read")
-            .scope("write")
-            .build();
-            
-        // Клиент для payment-service
-        RegisteredClient paymentClient = RegisteredClient.withId(UUID.randomUUID().toString())
-            .clientId("payment-client")
-            .clientSecret("{noop}payment-secret")
-            .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-            .redirectUri("http://localhost:8081/login/oauth2/code/auth-server")
-            .scope(OidcScopes.OPENID)
-            .scope("read")
-            .scope("write")
-            .build();
-
-        return new InMemoryRegisteredClientRepository(client, mainClient, paymentClient);
+        return new InMemoryRegisteredClientRepository(shopClient);
     }
 
     @Bean
