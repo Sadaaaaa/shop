@@ -2,7 +2,7 @@
 
 ## Overview
 
-SHOP APP is a reactive application consisting of two microservices, using Redis for caching and PostgreSQL for data storage. The application provides efficient purchase management and offers flexible deployment options using either Docker or Maven.
+SHOP APP is a reactive application consisting of three microservices, using Redis for caching and PostgreSQL for data storage. The application provides efficient purchase management and offers flexible deployment options using either Docker or Maven.
 
 ## Project Architecture
 
@@ -10,18 +10,35 @@ The project consists of the following components:
 
 1. **Main Service** - core service for managing products, carts, and orders
    - Port: 8080
-   - Dependencies: PostgreSQL, Redis
+   - Dependencies: PostgreSQL, Redis, Auth Server
 
 2. **Payment Service** - service for processing payments
    - Port: 8081
-   - Dependencies: PostgreSQL
+   - Dependencies: PostgreSQL, Auth Server
 
-3. **PostgreSQL** - database for storing data
+3. **Auth Server** - OAuth2 authorization server for authentication and authorization
+   - Port: 9000
+
+4. **PostgreSQL** - database for storing data
    - Port: 5432
    - Database: shop_db
 
-4. **Redis** - storage for data caching
+5. **Redis** - storage for data caching
    - Port: 6379
+
+## User Accounts
+
+The application comes with predefined user accounts for testing:
+
+- Regular User:
+  - Username: user
+  - Password: password
+  - Roles: USER
+
+- Administrator:
+  - Username: admin
+  - Password: admin!
+  - Roles: ADMIN
 
 ## Requirements
 
@@ -50,7 +67,7 @@ docker-compose up
 ```
 
 This will:
-- Build two images: `main_service` and `payment`
+- Build three images: `main_service`, `payment`, and `auth_server`
 - Start the application containers
 - Set up and initialize the PostgreSQL database
 - Set up and initialize the Redis cache
@@ -58,6 +75,7 @@ This will:
 
 The Main Service will be available at [http://localhost:8080](http://localhost:8080).
 The Payment Service will be available at [http://localhost:8081](http://localhost:8081).
+The Auth Server will be available at [http://localhost:9000](http://localhost:9000).
 
 The PostgreSQL database will be accessible on port 5432.
 The Redis cache will be accessible on port 6379.
@@ -88,6 +106,14 @@ Ensure you have Redis running on port 6379.
 
 Make sure Maven and JDK 21 are installed, then execute:
 
+#### For Auth Server:
+```bash
+cd auth_server
+./mvnw clean spring-boot:run
+```
+
+The Auth Server will start and be available at [http://localhost:9000](http://localhost:9000).
+
 #### For Main Service:
 ```bash
 cd main_service
@@ -104,13 +130,20 @@ cd payment
 
 The Payment Service will start and be available at [http://localhost:8081](http://localhost:8081).
 
-**Note:** Both microservices will only start successfully if there is a PostgreSQL database running on port 5432 with a database named `shop_db`. For the Main Service, a running Redis instance on port 6379 is also required.
+**Note:** All microservices will only start successfully if there is a PostgreSQL database running on port 5432 with a database named `shop_db`. For the Main Service, a running Redis instance on port 6379 is also required. Furthermore, both Main Service and Payment Service require the Auth Server to be running.
 
 ## Usage
 
 After starting the application, navigate to [http://localhost:8080](http://localhost:8080) in your web browser to access the SHOP APP dashboard.
 
+You can log in using one of the predefined accounts:
+- Regular user: `user` / `password`
+- Administrator: `admin` / `admin!`
+
 ## API Documentation
 
 - Main Service API: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 - Payment Service API: [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
+- Auth Server Endpoints:
+  - Token Endpoint: [http://localhost:9000/oauth2/token](http://localhost:9000/oauth2/token)
+  - JWK Set Endpoint: [http://localhost:9000/oauth2/jwks](http://localhost:9000/oauth2/jwks)

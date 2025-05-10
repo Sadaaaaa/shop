@@ -4,12 +4,15 @@ import com.example.main_service.model.Cart;
 import com.example.main_service.model.Product;
 import com.example.main_service.service.CartService;
 import com.example.main_service.service.ProductService;
+import com.example.main_service.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.ui.Model;
@@ -27,6 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ProductControllerTest {
 
     @Mock
@@ -34,6 +38,9 @@ class ProductControllerTest {
 
     @Mock
     private CartService cartService;
+
+    @Mock
+    private UserService userService;
 
     @Mock
     private Model model;
@@ -44,6 +51,7 @@ class ProductControllerTest {
     private Product testProduct;
     private Cart testCart;
     private PageImpl<Product> testPage;
+    private static final Long TEST_USER_ID = 1L;
 
     @BeforeEach
     void setUp() {
@@ -54,9 +62,12 @@ class ProductControllerTest {
 
         testCart = new Cart();
         testCart.setId(1L);
-        testCart.setUserId(1L);
+        testCart.setUserId(TEST_USER_ID);
 
         testPage = new PageImpl<>(List.of(testProduct));
+        
+        // Мокируем получение userId из security context
+        when(userService.getUserIdFromSecurityContext()).thenReturn(Mono.just(TEST_USER_ID));
     }
 
     @Test

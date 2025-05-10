@@ -3,6 +3,7 @@ WORKDIR /app
 COPY . .
 RUN cd main_service && ./mvnw clean package spring-boot:repackage -DskipTests
 RUN cd payment && ./mvnw clean package spring-boot:repackage -DskipTests
+RUN cd auth_server && ./mvnw clean package spring-boot:repackage -DskipTests
 
 # Main service image
 FROM openjdk:21-jdk-slim AS main_service
@@ -19,4 +20,13 @@ FROM openjdk:21-jdk-slim AS payment
 WORKDIR /app
 COPY --from=builder /app/payment/target/payment-0.0.1-SNAPSHOT.jar .
 EXPOSE 8081
-ENTRYPOINT ["java", "-jar", "payment-0.0.1-SNAPSHOT.jar"] 
+ENTRYPOINT ["java", "-jar", "payment-0.0.1-SNAPSHOT.jar"]
+
+# Auth server image
+FROM openjdk:21-jdk-slim AS auth_server
+WORKDIR /app
+# Устанавливаем curl для healthcheck
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /app/auth_server/target/auth_server-0.0.1-SNAPSHOT.jar .
+EXPOSE 9000
+ENTRYPOINT ["java", "-jar", "auth_server-0.0.1-SNAPSHOT.jar"] 

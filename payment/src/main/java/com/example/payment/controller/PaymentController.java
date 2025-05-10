@@ -3,26 +3,30 @@ package com.example.payment.controller;
 import com.example.payment.api.DefaultApi;
 import com.example.payment.model.dto.Balance;
 import com.example.payment.service.PaymentService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @CrossOrigin("*")
 @RestController
 public class PaymentController implements DefaultApi {
     private final PaymentService paymentService;
-
-    private static final Long MOCK_USER = 1L;
 
     public PaymentController(PaymentService paymentService) {
         this.paymentService = paymentService;
     }
 
     @Override
-    public Mono<ResponseEntity<Balance>> getBalance(ServerWebExchange exchange) {
-        return paymentService.getBalance(MOCK_USER)
+    public Mono<ResponseEntity<Balance>> getBalance(Long userId, ServerWebExchange exchange) {
+        exchange.getRequest().getHeaders().forEach((name, values) ->
+                values.forEach(value -> log.debug("Заголовок запроса: {}={}", name, value))
+        );
+
+        return paymentService.getBalance(userId)
                 .map(account -> {
                     Balance balance = new Balance();
                     balance.setAmount(account.getAmount());
@@ -35,10 +39,18 @@ public class PaymentController implements DefaultApi {
                 });
     }
 
+
     @Override
-    public Mono<ResponseEntity<Boolean>> processPayment(Double amount, ServerWebExchange exchange) {
-        return paymentService.processPayment(MOCK_USER, amount)
+    public Mono<ResponseEntity<Boolean>> processPayment(Double amount, Long userId, ServerWebExchange exchange) {
+        exchange.getRequest().getHeaders().forEach((name, values) ->
+                values.forEach(value -> log.debug("Заголовок запроса: {}={}", name, value))
+        );
+
+        return paymentService.processPayment(userId, amount)
                 .map(ResponseEntity::ok)
-                .onErrorResume(e -> Mono.just(ResponseEntity.badRequest().body(false)));
+                .onErrorResume(e -> {
+                    log.error("Ошибка при обработке платежа для пользователя {}: {}", userId, e.getMessage());
+                    return Mono.just(ResponseEntity.badRequest().body(false));
+                });
     }
-} 
+}

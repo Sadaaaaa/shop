@@ -11,6 +11,7 @@
     <modules>
         <module>main_service</module>
         <module>payment</module>
+        <module>auth_server</module>
     </modules>
 
     <url/>

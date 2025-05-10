@@ -11,6 +11,14 @@ paths:
     get:
       operationId: getBalance
       summary: Получить текущий баланс
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: ID пользователя
       responses:
         '200':
           description: Успешное получение баланса
@@ -35,6 +43,13 @@ paths:
           schema:
             type: number
             format: double
+        - name: userId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: ID пользователя
       responses:
         '200':
           description: Успешная обработка платежа

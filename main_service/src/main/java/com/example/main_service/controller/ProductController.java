@@ -2,8 +2,10 @@ package com.example.main_service.controller;
 
 import com.example.main_service.service.CartService;
 import com.example.main_service.service.ProductService;
+import com.example.main_service.service.UserService;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,15 +22,16 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Objects;
 
+@Slf4j
 @Validated
 @Controller
 @RequestMapping("/")
 @RequiredArgsConstructor
 public class ProductController {
 
-    private static final Long MOCK_USER = 1L;
     private final ProductService productService;
     private final CartService cartService;
+    private final UserService userService;
 
     @GetMapping
     public Mono<String> showProducts(@RequestParam(defaultValue = "0") int page,
@@ -37,7 +40,8 @@ public class ProductController {
                                      @RequestParam(required = false) String search,
                                      Model model) {
         return productService.findProductsByNameOrDescription(search, page, size, sort)
-                .flatMap(products -> cartService.getCart(MOCK_USER)
+                .flatMap(products -> userService.getUserIdFromSecurityContext()
+                        .flatMap(cartService::getCart)
                         .map(cart -> {
                             model.addAttribute("products", products.getContent());
                             model.addAttribute("totalPages", products.getTotalPages());
@@ -49,18 +53,34 @@ public class ProductController {
                                     "size", size
                             ));
                             return "products";
-                        }));
+                        })
+                        .switchIfEmpty(Mono.fromCallable(() -> {
+                            model.addAttribute("products", products.getContent());
+                            model.addAttribute("totalPages", products.getTotalPages());
+                            model.addAttribute("currentPage", page);
+                            model.addAttribute("param", Map.of(
+                                    "search", search == null ? "" : search,
+                                    "sort", sort == null ? "" : sort,
+                                    "size", size
+                            ));
+                            return "products";
+                        })));
     }
 
     @GetMapping("/products/{id}")
     public Mono<String> viewProduct(@PathVariable @NotNull Long id, Model model) {
         return productService.findProductById(id)
-                .flatMap(product -> cartService.getCart(MOCK_USER)
+                .flatMap(product -> userService.getUserIdFromSecurityContext()
+                        .flatMap(cartService::getCart)
                         .map(cart -> {
                             model.addAttribute("product", product);
                             model.addAttribute("cart", cart);
                             return "item";
-                        }));
+                        })
+                        .switchIfEmpty(Mono.fromCallable(() -> {
+                            model.addAttribute("product", product);
+                            return "item";
+                        })));
     }
 
     @GetMapping(value = "/products/image/{id}", produces = MediaType.IMAGE_JPEG_VALUE)
@@ -80,7 +100,7 @@ public class ProductController {
                 })
                 .defaultIfEmpty(ResponseEntity.notFound().build())
                 .onErrorResume(e -> {
-                    System.err.println("Error: " + e.getMessage());
+                    log.error("Ошибка при получении изображения продукта: {}", e.getMessage());
                     return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
                 });
     }

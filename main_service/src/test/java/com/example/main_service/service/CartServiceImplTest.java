@@ -141,7 +141,7 @@ class CartServiceImplTest {
     void removeItemFromCart_WhenItemExists_ShouldRemoveItem() {
         when(cartRepository.findByUserId(USER_ID)).thenReturn(Mono.just(testCart));
         when(cartItemRepository.deleteByCartIdAndProductId(CART_ID, PRODUCT_ID))
-                .thenReturn(Flux.empty());
+                .thenReturn(Mono.empty());
         when(cartItemRepository.findByCartId(CART_ID)).thenReturn(Flux.fromIterable(testCart.getItems()));
         when(productService.findProductById(PRODUCT_ID)).thenReturn(Mono.just(testProduct));
 
@@ -201,7 +201,7 @@ class CartServiceImplTest {
         when(cartItemRepository.findByCartId(CART_ID)).thenReturn(Flux.fromIterable(testCart.getItems()));
         when(productService.findProductById(PRODUCT_ID)).thenReturn(Mono.just(testProduct));
 
-        StepVerifier.create(cartService.getProductsCounter(USER_ID, 999L))
+        StepVerifier.create(cartService.getProductsCounter(USER_ID, 2L))
                 .expectNext(0)
                 .verifyComplete();
     }
