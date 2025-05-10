@@ -25,31 +25,7 @@ public class PaymentClientService {
         // Создаем веб-клиент на основе существующего OAuth2 клиента с базовым URL платежного сервиса
         this.webClient = webClient.mutate()
                 .baseUrl(paymentServiceUrl)
-                .filter(logRequest())
-                .filter(logResponse())
                 .build();
-    }
-
-    /**
-     * Фильтр для логирования запросов
-     */
-    private ExchangeFilterFunction logRequest() {
-        return ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
-            log.info("Отправка запроса к payment-service: {} {}", clientRequest.method(), clientRequest.url());
-            clientRequest.headers().forEach((name, values) -> 
-                values.forEach(value -> log.debug("Заголовок запроса: {}={}", name, value)));
-            return Mono.just(clientRequest);
-        });
-    }
-
-    /**
-     * Фильтр для логирования ответов
-     */
-    private ExchangeFilterFunction logResponse() {
-        return ExchangeFilterFunction.ofResponseProcessor(clientResponse -> {
-            log.info("Получен ответ от payment-service с кодом: {}", clientResponse.statusCode());
-            return Mono.just(clientResponse);
-        });
     }
 
     public Mono<Balance> getBalance(Long userId) {

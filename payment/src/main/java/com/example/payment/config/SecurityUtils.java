@@ -65,23 +65,32 @@ public class SecurityUtils {
             
             // Если subject не содержит ID пользователя, пробуем извлечь из поля "user_id" или аналогичных
             Object userId = jwt.getClaims().get("user_id");
+            if (userId == null) {
+                // Пробуем поле userId (которое мы добавили в auth_server)
+                userId = jwt.getClaims().get("userId");
+                log.debug("Ищем userId в поле 'userId': {}", userId);
+            }
+            
             if (userId != null) {
-                log.debug("Найдено поле user_id в claims: {}, тип: {}", userId, userId.getClass().getName());
+                log.debug("Найдено поле userId в claims: {}, тип: {}", userId, userId.getClass().getName());
                 try {
                     if (userId instanceof Number) {
                         Long id = ((Number) userId).longValue();
-                        log.debug("Извлечен userId из поля user_id (Number): {}", id);
+                        log.debug("Извлечен userId из поля userId (Number): {}", id);
                         return Mono.just(id);
                     } else if (userId instanceof String) {
                         Long id = Long.parseLong((String) userId);
-                        log.debug("Извлечен userId из поля user_id (String): {}", id);
+                        log.debug("Извлечен userId из поля userId (String): {}", id);
                         return Mono.just(id);
                     }
                 } catch (NumberFormatException e) {
-                    log.error("Не удалось преобразовать user_id '{}' в Long", userId, e);
+                    log.error("Не удалось преобразовать userId '{}' в Long", userId, e);
                 }
             } else {
-                log.debug("Поле user_id не найдено в JWT токене");
+                log.debug("Поля user_id и userId не найдены в JWT токене");
+                
+                // Выводим все доступные claims для отладки
+                log.debug("Доступные claims в JWT: {}", jwt.getClaims());
             }
         } else {
             log.debug("Principal не является JWT токеном: {}", principal.getClass().getName());
