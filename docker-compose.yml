@@ -22,7 +22,7 @@ services:
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_SHOP-CLIENT_AUTHORIZATION-GRANT-TYPE: client_credentials
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_SHOP-CLIENT_PROVIDER: auth-server
       # Настройки провайдера OAuth2
-      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_AUTH-SERVER_TOKEN-URI: http://auth_server:9000/oauth2/token
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_AUTH-SERVER_TOKEN-URI: http://auth-server:9000/oauth2/token
     ports:
       - "8080:8080"
     networks:
@@ -32,7 +32,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      auth_server:
+      auth-server:
         condition: service_healthy
 
   payment:
@@ -46,8 +46,8 @@ services:
       SPRING_R2DBC_URL: r2dbc:postgresql://db:5432/shop_db
       SPRING_R2DBC_USERNAME: postgres
       SPRING_R2DBC_PASSWORD: postgres
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWK_SET_URI: http://auth_server:9000/oauth2/jwks
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://auth_server:9000
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWK_SET_URI: http://auth-server:9000/oauth2/jwks
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://auth-server:9000
     ports:
       - "8081:8081"
     networks:
@@ -55,16 +55,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      auth_server:
+      auth-server:
         condition: service_healthy
 
-  auth_server:
+  auth-server:
     build:
       context: .
       dockerfile: Dockerfile
       target: auth_server
     image: auth_server:latest
-    container_name: auth_server
+    container_name: auth-server
     ports:
       - "9000:9000"
     networks:
