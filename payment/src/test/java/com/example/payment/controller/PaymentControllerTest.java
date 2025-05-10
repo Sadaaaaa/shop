@@ -15,6 +15,7 @@ import reactor.core.publisher.Mono;
 
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -46,10 +47,13 @@ class PaymentControllerTest {
 
     @Test
     void getBalance_ShouldReturnBalance() {
-        when(paymentService.getBalance(anyLong())).thenReturn(Mono.just(testAccount));
+        when(paymentService.getBalance(eq(USER_ID))).thenReturn(Mono.just(testAccount));
 
         webTestClient.get()
-                .uri("/payments/balance")
+                .uri(uriBuilder -> uriBuilder
+                        .path("/payments/balance")
+                        .queryParam("userId", USER_ID)
+                        .build())
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
@@ -61,10 +65,13 @@ class PaymentControllerTest {
 
     @Test
     void getBalance_WhenErrorOccurs_ShouldReturnInternalServerError() {
-        when(paymentService.getBalance(anyLong())).thenReturn(Mono.error(new RuntimeException("Account not found")));
+        when(paymentService.getBalance(eq(USER_ID))).thenReturn(Mono.error(new RuntimeException("Account not found")));
 
         webTestClient.get()
-                .uri("/payments/balance")
+                .uri(uriBuilder -> uriBuilder
+                        .path("/payments/balance")
+                        .queryParam("userId", USER_ID)
+                        .build())
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().is5xxServerError()
@@ -78,12 +85,13 @@ class PaymentControllerTest {
     void processPayment_WhenSufficientFunds_ShouldReturnTrue() {
         Double paymentAmount = 500.0;
 
-        when(paymentService.processPayment(anyLong(), anyDouble())).thenReturn(Mono.just(true));
+        when(paymentService.processPayment(eq(USER_ID), eq(paymentAmount))).thenReturn(Mono.just(true));
 
         webTestClient.post()
                 .uri(uriBuilder -> uriBuilder
                         .path("/payments/process")
                         .queryParam("amount", paymentAmount)
+                        .queryParam("userId", USER_ID)
                         .build())
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
@@ -96,13 +104,14 @@ class PaymentControllerTest {
     void processPayment_WhenInsufficientFunds_ShouldReturnBadRequest() {
         Double paymentAmount = 1500.0;
 
-        when(paymentService.processPayment(anyLong(), anyDouble()))
+        when(paymentService.processPayment(eq(USER_ID), eq(paymentAmount)))
                 .thenReturn(Mono.error(new RuntimeException("Insufficient funds")));
 
         webTestClient.post()
                 .uri(uriBuilder -> uriBuilder
                         .path("/payments/process")
                         .queryParam("amount", paymentAmount)
+                        .queryParam("userId", USER_ID)
                         .build())
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()

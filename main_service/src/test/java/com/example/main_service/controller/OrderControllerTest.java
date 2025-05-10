@@ -6,12 +6,15 @@ import com.example.main_service.model.Order;
 import com.example.main_service.model.OrderItem;
 import com.example.main_service.service.CartService;
 import com.example.main_service.service.OrderService;
+import com.example.main_service.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.ui.Model;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -30,6 +33,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class OrderControllerTest {
 
     @Mock
@@ -37,6 +41,9 @@ class OrderControllerTest {
 
     @Mock
     private CartService cartService;
+
+    @Mock
+    private UserService userService;
 
     @Mock
     private Model model;
@@ -48,6 +55,7 @@ class OrderControllerTest {
     private Cart testCart;
     private CartItem testCartItem;
     private OrderItem testOrderItem;
+    private static final Long TEST_USER_ID = 1L;
 
     @BeforeEach
     void setUp() {
@@ -58,7 +66,7 @@ class OrderControllerTest {
 
         testCart = new Cart();
         testCart.setId(1L);
-        testCart.setUserId(1L);
+        testCart.setUserId(TEST_USER_ID);
         testCart.setItems(new ArrayList<>(List.of(testCartItem)));
 
         testOrderItem = new OrderItem();
@@ -68,10 +76,13 @@ class OrderControllerTest {
 
         testOrder = new Order();
         testOrder.setId(1L);
-        testOrder.setUserId(1L);
+        testOrder.setUserId(TEST_USER_ID);
         testOrder.setItems(List.of(testOrderItem));
         testOrder.setCreatedAt(LocalDateTime.now());
         testOrder.setTotalAmount(200.0);
+        
+        // Мокируем получение userId из security context
+        when(userService.getUserIdFromSecurityContext()).thenReturn(Mono.just(TEST_USER_ID));
     }
 
     @Test

@@ -6,6 +6,7 @@ import com.example.main_service.model.CartItem;
 import com.example.main_service.model.Product;
 import com.example.main_service.service.CartService;
 import com.example.main_service.service.ProductService;
+import com.example.main_service.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,6 +36,9 @@ class CartControllerTest {
     private ProductService productService;
 
     @Mock
+    private UserService userService;
+
+    @Mock
     private Model model;
 
     @InjectMocks
@@ -43,6 +47,7 @@ class CartControllerTest {
     private Cart testCart;
     private CartItem testCartItem;
     private Product testProduct;
+    private static final Long TEST_USER_ID = 1L;
 
     @BeforeEach
     void setUp() {
@@ -58,8 +63,11 @@ class CartControllerTest {
 
         testCart = new Cart();
         testCart.setId(1L);
-        testCart.setUserId(1L);
+        testCart.setUserId(TEST_USER_ID);
         testCart.setItems(new ArrayList<>(List.of(testCartItem)));
+        
+        // Мокируем получение userId из security context
+        when(userService.getUserIdFromSecurityContext()).thenReturn(Mono.just(TEST_USER_ID));
     }
 
     @Test
