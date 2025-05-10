@@ -14,7 +14,15 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       SPRING_DATA_REDIS_USERNAME: default
       SPRING_DATA_REDIS_PASSWORD: redis
-      AUTH_SERVER_URL: http://auth_server:9000
+      PAYMENT_SERVICE_URL: http://payment:8081
+      # Настройки OAuth2 клиента
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_SHOP-CLIENT_CLIENT-ID: shop-client
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_SHOP-CLIENT_CLIENT-SECRET: shop-secret
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_SHOP-CLIENT_SCOPE: payment.read,payment.write
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_SHOP-CLIENT_AUTHORIZATION-GRANT-TYPE: client_credentials
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_SHOP-CLIENT_PROVIDER: auth-server
+      # Настройки провайдера OAuth2
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_AUTH-SERVER_TOKEN-URI: http://auth_server:9000/oauth2/token
     ports:
       - "8080:8080"
     networks:
@@ -23,6 +31,8 @@ services:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      auth_server:
         condition: service_healthy
 
   payment:
@@ -36,13 +46,16 @@ services:
       SPRING_R2DBC_URL: r2dbc:postgresql://db:5432/shop_db
       SPRING_R2DBC_USERNAME: postgres
       SPRING_R2DBC_PASSWORD: postgres
-      AUTH_SERVER_URL: http://auth_server:9000
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWK_SET_URI: http://auth_server:9000/oauth2/jwks
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://auth_server:9000
     ports:
       - "8081:8081"
     networks:
       - shop_network
     depends_on:
       db:
+        condition: service_healthy
+      auth_server:
         condition: service_healthy
 
   auth_server:
@@ -52,14 +65,19 @@ services:
       target: auth_server
     image: auth_server:latest
     container_name: auth_server
-    environment:
-      SPRING_R2DBC_URL: r2dbc:postgresql://db:5432/shop_db
-      SPRING_R2DBC_USERNAME: postgres
-      SPRING_R2DBC_PASSWORD: postgres
     ports:
       - "9000:9000"
     networks:
       - shop_network
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
 
   db:
     image: postgres:17
