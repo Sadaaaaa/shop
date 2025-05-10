@@ -2,11 +2,9 @@ package com.example.main_service.service;
 
 import com.example.main_service.client.payment.model.Balance;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -19,17 +17,13 @@ public class PaymentClientService {
     public PaymentClientService(
             @Value("${payment.service.url:http://localhost:8081}") String paymentServiceUrl,
             WebClient webClient) {
-        
-        log.info("Инициализация PaymentClientService. URL платежного сервиса: {}", paymentServiceUrl);
-        
-        // Создаем веб-клиент на основе существующего OAuth2 клиента с базовым URL платежного сервиса
+
         this.webClient = webClient.mutate()
                 .baseUrl(paymentServiceUrl)
                 .build();
     }
 
     public Mono<Balance> getBalance(Long userId) {
-        log.info("Запрос баланса для пользователя: {}", userId);
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/payments/balance")
@@ -43,7 +37,6 @@ public class PaymentClientService {
     }
 
     public Mono<Boolean> processPayment(Long userId, Double amount) {
-        log.info("Запрос на списание суммы {} для пользователя: {}", amount, userId);
         return webClient.post()
                 .uri(uriBuilder -> uriBuilder
                         .path("/payments/process")

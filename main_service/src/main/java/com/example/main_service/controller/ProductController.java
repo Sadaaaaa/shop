@@ -41,7 +41,7 @@ public class ProductController {
                                      Model model) {
         return productService.findProductsByNameOrDescription(search, page, size, sort)
                 .flatMap(products -> userService.getUserIdFromSecurityContext()
-                        .flatMap(userId -> cartService.getCart(userId))
+                        .flatMap(cartService::getCart)
                         .map(cart -> {
                             model.addAttribute("products", products.getContent());
                             model.addAttribute("totalPages", products.getTotalPages());
@@ -71,7 +71,7 @@ public class ProductController {
     public Mono<String> viewProduct(@PathVariable @NotNull Long id, Model model) {
         return productService.findProductById(id)
                 .flatMap(product -> userService.getUserIdFromSecurityContext()
-                        .flatMap(userId -> cartService.getCart(userId))
+                        .flatMap(cartService::getCart)
                         .map(cart -> {
                             model.addAttribute("product", product);
                             model.addAttribute("cart", cart);

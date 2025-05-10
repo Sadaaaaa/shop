@@ -42,7 +42,6 @@ public class SecurityConfig {
     public ReactiveJwtDecoder jwtDecoder() {
         NimbusReactiveJwtDecoder jwtDecoder = NimbusReactiveJwtDecoder.withJwkSetUri(jwkSetUri).build();
 
-        // Если указан issuer, добавляем валидатор для проверки issuer
         if (issuerUri != null && !issuerUri.isEmpty()) {
             OAuth2TokenValidator<Jwt> issuerValidator = JwtValidators.createDefaultWithIssuer(issuerUri);
             OAuth2TokenValidator<Jwt> delegatingValidator = new DelegatingOAuth2TokenValidator<>(issuerValidator);

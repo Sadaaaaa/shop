@@ -26,9 +26,6 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(new AntPathRequestMatcher("/health")).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/public/**")).permitAll()
-                .requestMatchers(new AntPathRequestMatcher("/css/**")).permitAll()
-                .requestMatchers(new AntPathRequestMatcher("/js/**")).permitAll()
-                .requestMatchers(new AntPathRequestMatcher("/images/**")).permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form

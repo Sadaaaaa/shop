@@ -29,7 +29,7 @@ public class SecurityConfig {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/", "/products/**", "/login", "/logout", "/register", "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
+                        .pathMatchers("/", "/products/**", "/login", "/logout", "/register", "/css/**", "/js/**", "/images/**").permitAll()
                         .pathMatchers("/admin/**").hasRole("ADMIN")
                         .pathMatchers("/cart/**", "/orders/**").authenticated()
                         .anyExchange().permitAll()

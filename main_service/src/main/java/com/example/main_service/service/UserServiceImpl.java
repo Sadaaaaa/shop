@@ -53,7 +53,6 @@ public class UserServiceImpl implements UserService {
         return ReactiveSecurityContextHolder.getContext()
                 .map(SecurityContext::getAuthentication)
                 .flatMap(authentication -> {
-                    // Получаем principal из аутентификации
                     Object principal = authentication.getPrincipal();
                     String username = ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
                     return this.findUserIdByUsername(username)

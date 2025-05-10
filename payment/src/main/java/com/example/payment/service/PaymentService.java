@@ -24,7 +24,6 @@ public class PaymentService {
                         log.warn("Аккаунт не найден для пользователя: {}", userId);
                     }
                 })
-                .doOnError(error -> log.error("Ошибка при получении баланса для пользователя {}: {}", userId, error.getMessage()))
                 .switchIfEmpty(Mono.error(new RuntimeException("Payment account not found")));
     }
 

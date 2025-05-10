@@ -38,7 +38,7 @@ public class CartController {
     @GetMapping
     public Mono<String> getCartPage(Model model) {
         return userService.getUserIdFromSecurityContext()
-                .flatMap(userId -> cartService.getCart(userId))
+                .flatMap(cartService::getCart)
                 .map(cart -> {
                     model.addAttribute("cart", cart);
                     return "cart";
@@ -49,14 +49,14 @@ public class CartController {
     @ResponseBody
     public Mono<Cart> getCart() {
         return userService.getUserIdFromSecurityContext()
-                .flatMap(userId -> cartService.getCart(userId));
+                .flatMap(cartService::getCart);
     }
 
     @GetMapping("/counter")
     @ResponseBody
     public Mono<Integer> getCartCounter() {
         return userService.getUserIdFromSecurityContext()
-                .flatMap(userId -> cartService.getCartCounter(userId));
+                .flatMap(cartService::getCartCounter);
     }
 
     @GetMapping("/count")
@@ -155,7 +155,7 @@ public class CartController {
     @DeleteMapping
     public Mono<ResponseEntity<Void>> clearCart() {
         return userService.getUserIdFromSecurityContext()
-                .flatMap(userId -> cartService.clearCart(userId))
+                .flatMap(cartService::clearCart)
                 .then(Mono.just(ResponseEntity.ok().build()));
     }
 }

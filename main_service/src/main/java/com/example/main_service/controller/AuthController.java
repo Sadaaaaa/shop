@@ -26,7 +26,6 @@ public class AuthController {
             return "redirect:/";
         }
         
-        // Проверяем параметры запроса
         var params = exchange.getRequest().getQueryParams();
         if (params.containsKey("error")) {
             model.addAttribute("error", true);
@@ -47,7 +46,6 @@ public class AuthController {
             return Mono.just("redirect:/");
         }
         
-        // Получаем параметр error из запроса и добавляем его в модель
         String error = exchange.getRequest().getQueryParams().getFirst("error");
         if (error != null) {
             model.addAttribute("error", error);
